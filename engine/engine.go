@@ -3,13 +3,16 @@ package engine
 import (
 	"context"
 	"fmt"
-	"reflect"
 )
+
+type Runtime interface {
+	Evaluate(ctx context.Context, req EvaluationRequest) (EvaluationResult, error)
+}
 
 type engineImpl struct {
 }
 
-func New() Engine {
+func New() Runtime {
 	return &engineImpl{}
 }
 
@@ -46,38 +49,4 @@ func (e *engineImpl) Evaluate(ctx context.Context, req EvaluationRequest) (Evalu
 	}
 
 	return result, nil
-}
-
-func evaluateCondition(c Condition, facts map[string]any) (any, bool) {
-	actual, ok := facts[c.Fact]
-	if !ok {
-		return nil, false
-	}
-
-	switch c.Operator {
-	case "eq":
-		return actual, reflect.DeepEqual(actual, c.Value)
-
-	case "neq":
-		return actual, !reflect.DeepEqual(actual, c.Value)
-
-	case "gt":
-		left, right, ok := numbers(actual, c.Value)
-		return actual, ok && left > right
-
-	case "gte":
-		left, right, ok := numbers(actual, c.Value)
-		return actual, ok && left >= right
-
-	case "lt":
-		left, right, ok := numbers(actual, c.Value)
-		return actual, ok && left < right
-
-	case "lte":
-		left, right, ok := numbers(actual, c.Value)
-		return actual, ok && left <= right
-
-	default:
-		return actual, false
-	}
 }

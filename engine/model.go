@@ -1,11 +1,5 @@
 package engine
 
-import "context"
-
-type Engine interface {
-	Evaluate(ctx context.Context, req EvaluationRequest) (EvaluationResult, error)
-}
-
 type EvaluationRequest struct {
 	Facts map[string]any
 	Rules []Rule
@@ -14,15 +8,13 @@ type EvaluationRequest struct {
 type Rule struct {
 	ID         string
 	Name       string
-	Conditions Conditions
+	Conditions Condition
 	Actions    []Action
 }
 
-type Conditions struct {
-	All []Condition
-}
-
 type Condition struct {
+	All      []Condition
+	Any      []Condition
 	Fact     string
 	Operator string
 	Value    any

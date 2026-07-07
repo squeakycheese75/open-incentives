@@ -207,3 +207,13 @@ Those concerns belong to applications built on top of the engine.
 The engine answers one question:
 
 > Given a set of facts and rules, which actions should be returned?
+
+
+```go
+runtime := engine.New()
+
+result, _ := runtime.Evaluate(
+    context.Background(),
+    req,
+)
+```

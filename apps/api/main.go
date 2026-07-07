@@ -11,7 +11,7 @@ import (
 	"time"
 
 	engine "github.com/squeakycheese75/open-incentives-engine"
-	"github.com/squeakycheese75/open-incentives/internal/handlers"
+	handlers "github.com/squeakycheese75/open-incentives/internal/api"
 )
 
 func main() {
