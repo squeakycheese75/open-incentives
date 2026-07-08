@@ -1,8 +1,9 @@
-package api
+package eval
 
 type EvaluateRequest struct {
 	Facts map[string]any `json:"facts"`
-	Rules []RuleRequest  `json:"rules"`
+	// Rules to be removed.
+	Rules []RuleRequest `json:"rules"`
 }
 
 type RuleRequest struct {

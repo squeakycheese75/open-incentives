@@ -1,4 +1,4 @@
-package api
+package eval
 
 import engine "github.com/squeakycheese75/open-incentives-engine"
 
