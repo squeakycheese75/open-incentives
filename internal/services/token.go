@@ -65,7 +65,6 @@ func (s *TokenService) Verify(tokenString string) (*auth.Claims, error) {
 }
 
 func (s *TokenService) HashToken(rawToken []byte) (string, error) {
-	// hash token
 	hash := sha256.Sum256([]byte(rawToken))
 	tokenHash := hex.EncodeToString(hash[:])
 

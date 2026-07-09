@@ -3,27 +3,15 @@ package campaign_create
 import (
 	"context"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"strings"
 
 	gonanoid "github.com/matoous/go-nanoid/v2"
 	"github.com/squeakycheese75/open-incentives/internal/domain"
-	"github.com/squeakycheese75/open-incentives/internal/store"
 )
 
-//	type ProjectStore interface {
-//		Find(ctx context.Context, orgID int64, publicID string) (domain.Project, error)
-//	}
-// type ScopedProjectStore interface {
-// 	Find(ctx context.Context, publicID string) (domain.Project, error)
-// }
-
 type ProjectStore interface {
-	// Scope(orgID int64) interface {
-	// 	Find(ctx context.Context, publicID string) (domain.Project, error)
-	// }
-	Scope(orgID int64) store.ScopedProjectStore
-	// Scope(orgID int64) ScopedProjectStore
+	FindByOrgAndPublicID(ctx context.Context, orgID int64, publicID string) (domain.Project, error)
 }
 
 type CampaignStore interface {
@@ -44,27 +32,27 @@ func New(projects ProjectStore, campaigns CampaignStore) *Usecase {
 
 func (uc *Usecase) Execute(ctx context.Context, input domain.CreateCampaignUsecaseInput) (domain.CreateCampaignUsecaseOutput, error) {
 	if input.OrgID == 0 {
-		return domain.CreateCampaignUsecaseOutput{}, errors.New("org id is required")
+		return domain.CreateCampaignUsecaseOutput{}, fmt.Errorf("org id is required: %w", domain.ErrInvalidInput)
 	}
 
 	projectPublicID := strings.TrimSpace(input.ProjectPublicID)
 	if projectPublicID == "" {
-		return domain.CreateCampaignUsecaseOutput{}, errors.New("project id is required")
+		return domain.CreateCampaignUsecaseOutput{}, fmt.Errorf("project id is required: %w", domain.ErrInvalidInput)
 	}
 
 	name := strings.TrimSpace(input.Name)
 	if name == "" {
-		return domain.CreateCampaignUsecaseOutput{}, errors.New("campaign name is required")
+		return domain.CreateCampaignUsecaseOutput{}, fmt.Errorf("campaign name is required: %w", domain.ErrInvalidInput)
 	}
 
-	project, err := uc.projects.Scope(input.OrgID).Find(ctx, projectPublicID)
+	project, err := uc.projects.FindByOrgAndPublicID(ctx, input.OrgID, projectPublicID)
 	if err != nil {
 		return domain.CreateCampaignUsecaseOutput{}, err
 	}
 
 	ruleJSON, err := json.Marshal(input.Rules)
 	if err != nil {
-		return domain.CreateCampaignUsecaseOutput{}, errors.New("invalid campaign rules")
+		return domain.CreateCampaignUsecaseOutput{}, fmt.Errorf("invalid campaign rules: %w", domain.ErrInvalidInput)
 	}
 
 	slug, err := newCampaignSlug()

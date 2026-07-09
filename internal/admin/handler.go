@@ -5,10 +5,10 @@ import (
 )
 
 type Handler struct {
-	adminContainer *usecase_admin.AdminUsecaseContainer
+	adminContainer *usecase_admin.AdminUsecaseFactory
 }
 
-func NewHandler(adminContainer *usecase_admin.AdminUsecaseContainer) *Handler {
+func NewHandler(adminContainer *usecase_admin.AdminUsecaseFactory) *Handler {
 	return &Handler{
 		adminContainer: adminContainer,
 	}

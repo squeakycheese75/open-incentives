@@ -29,22 +29,16 @@ type (
 	}
 )
 
-type AuthUsecaseContainer struct {
-	userStore   UserStore
-	orgStore    OrgStore
-	tokenSvc    TokenSvc
-	passwordSvc PasswordSvc
+type AuthUsecaseFactory struct {
+	authLoginUsecase AuthLoginUsecase
 }
 
-func NewUserUsecaseContainer(userStore UserStore, orgStore OrgStore, tokenSvc TokenSvc, passwordSvc PasswordSvc) *AuthUsecaseContainer {
-	return &AuthUsecaseContainer{
-		userStore:   userStore,
-		orgStore:    orgStore,
-		tokenSvc:    tokenSvc,
-		passwordSvc: passwordSvc,
+func NewUserUsecaseFactory(userStore UserStore, orgStore OrgStore, tokenSvc TokenSvc, passwordSvc PasswordSvc) *AuthUsecaseFactory {
+	return &AuthUsecaseFactory{
+		authLoginUsecase: auth_login.NewAuthLoginUsecase(userStore, orgStore, passwordSvc, tokenSvc),
 	}
 }
 
-func (uc *AuthUsecaseContainer) LoginUserUsecase() AuthLoginUsecase {
-	return auth_login.NewAuthLoginUsecase(uc.userStore, uc.orgStore, uc.passwordSvc, uc.tokenSvc)
+func (uc *AuthUsecaseFactory) LoginUserUsecase() AuthLoginUsecase {
+	return uc.authLoginUsecase
 }

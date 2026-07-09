@@ -7,37 +7,18 @@ import (
 	"github.com/squeakycheese75/open-incentives/internal/domain"
 )
 
-//	type ProjectStore interface {
-//		Find(ctx context.Context, orgID int64, slug string) (domain.Project, error)
-//	}
 type ProjectStore interface {
-	Scope(orgID int64) ScopedProjectStore
-}
-
-type ScopedProjectStore interface {
-	Find(ctx context.Context, publicID string) (domain.Project, error)
+	FindByOrgAndPublicID(ctx context.Context, orgID int64, publicID string) (domain.Project, error)
 }
 
 type projectStore struct {
 	queries *sqlitedb.Queries
 }
 
-type scopedProjectStore struct {
-	queries *sqlitedb.Queries
-	orgID   int64
-}
-
-func (s *projectStore) Scope(orgID int64) ScopedProjectStore {
-	return &scopedProjectStore{
-		queries: s.queries,
-		orgID:   orgID,
-	}
-}
-
-func (s *scopedProjectStore) Find(ctx context.Context, publicID string) (domain.Project, error) {
+func (s *projectStore) FindByOrgAndPublicID(ctx context.Context, orgID int64, publicID string) (domain.Project, error) {
 	result, err := s.queries.GetProjectByPublicID(ctx, sqlitedb.GetProjectByPublicIDParams{
 		PublicID: publicID,
-		OrgID:    s.orgID,
+		OrgID:    orgID,
 	})
 	if err != nil {
 		return domain.Project{}, err
@@ -47,5 +28,5 @@ func (s *scopedProjectStore) Find(ctx context.Context, publicID string) (domain.
 		ID:       result.ID,
 		Name:     result.Name,
 		PublicID: result.PublicID,
-	}, err
+	}, nil
 }

@@ -13,7 +13,7 @@ import (
 
 	engine "github.com/squeakycheese75/open-incentives-engine"
 	"github.com/squeakycheese75/open-incentives/configs"
-	"github.com/squeakycheese75/open-incentives/pkg/services"
+	"github.com/squeakycheese75/open-incentives/internal/services"
 
 	"github.com/squeakycheese75/open-incentives/internal/admin"
 	"github.com/squeakycheese75/open-incentives/internal/admin/auth"
@@ -46,11 +46,11 @@ func run(cfg *configs.APIConfig) error {
 	passwordSvc := services.NewBcryptPasswordService()
 	tokenSvc := services.NewJWTTokenService(cfg.ServerJWTSecret)
 
-	authContainer := usecase_auth.NewUserUsecaseContainer(store.Users(), store.Orgs(), tokenSvc, passwordSvc)
-	adminContainer := usecase_admin.NewAdminUsecaseContainer(store.Projects(), store.Campaigns())
+	authUsecaseFactory := usecase_auth.NewUserUsecaseFactory(store.Users(), store.Orgs(), tokenSvc, passwordSvc)
+	adminUsecaseFactory := usecase_admin.NewAdminUsecaseFactory(store.Projects(), store.Campaigns())
 
-	adminHandler := admin.NewHandler(adminContainer)
-	authHandler := auth.NewHandler(authContainer)
+	adminHandler := admin.NewHandler(adminUsecaseFactory)
+	authHandler := auth.NewHandler(authUsecaseFactory)
 	evalHandler := eval.NewHandler(engine)
 
 	// authCache := cache.NewAuthContextCache(5 * time.Minute)

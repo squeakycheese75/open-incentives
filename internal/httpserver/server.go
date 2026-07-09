@@ -11,15 +11,11 @@ import (
 	"github.com/squeakycheese75/open-incentives/internal/eval"
 )
 
-type TokenVerifier interface {
-	Verify(tokenString string) (*middleware.Claims, error)
-}
-
 func New(
 	adminHandler *admin.Handler,
 	authHandler *auth.Handler,
 	evalHandler *eval.Handler,
-	tokenVerifier TokenVerifier,
+	tokenVerifier middleware.TokenVerifier,
 	adminContextStore middleware.OrgContextStore,
 ) http.Handler {
 	root := http.NewServeMux()

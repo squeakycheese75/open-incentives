@@ -59,10 +59,16 @@ func (s *Handler) AuthLogin(w http.ResponseWriter, r *http.Request) {
 		OrgPublicID: req.Organization,
 	})
 	if err != nil {
-		httputil.WriteJSON(w, http.StatusInternalServerError, map[string]any{
-			"error": "failed_to_login_user",
-			"msg":   err.Error(),
-		})
+		switch {
+		case errors.Is(err, domain.ErrInvalidInput):
+			httputil.WriteJSON(w, http.StatusBadRequest, map[string]any{"error": err.Error()})
+		case errors.Is(err, domain.ErrUnauthorized):
+			httputil.WriteJSON(w, http.StatusUnauthorized, map[string]any{"error": "invalid credentials"})
+		case errors.Is(err, domain.ErrNotFound):
+			httputil.WriteJSON(w, http.StatusNotFound, map[string]any{"error": err.Error()})
+		default:
+			httputil.WriteJSON(w, http.StatusInternalServerError, map[string]any{"error": "failed_to_login_user"})
+		}
 		return
 	}
 

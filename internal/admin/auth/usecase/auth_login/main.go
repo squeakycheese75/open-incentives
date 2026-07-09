@@ -2,7 +2,7 @@ package auth_login
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -43,7 +43,7 @@ func NewAuthLoginUsecase(userStore UserStore, orgStore OrgStore, passwordSvc Pas
 func (uc *AuthLoginUsecase) Execute(ctx context.Context, input domain.AuthLoginUsecaseInput) (*domain.AuthLoginUsecaseOutput, error) {
 	orgSlug := strings.TrimSpace(input.OrgPublicID)
 	if orgSlug == "" {
-		return nil, errors.New("org slug is missing")
+		return nil, fmt.Errorf("org slug is missing: %w", domain.ErrInvalidInput)
 	}
 
 	email := strings.ToLower(strings.TrimSpace(input.Email))
@@ -59,13 +59,12 @@ func (uc *AuthLoginUsecase) Execute(ctx context.Context, input domain.AuthLoginU
 	}
 
 	if !uc.passwordSvc.Verify(input.Password, user.HashedPassword) {
-		return nil, errors.New("invalid credentials")
+		return nil, fmt.Errorf("invalid credentials: %w", domain.ErrUnauthorized)
 	}
 
-	// // Generate a new JWT Token
 	token, expiry, err := uc.tokenSvc.Create(user.PublicID, orgSlug)
 	if err != nil {
-		return nil, errors.New("token generation failed")
+		return nil, fmt.Errorf("token generation failed: %w", err)
 	}
 
 	return &domain.AuthLoginUsecaseOutput{Token: token, ExpiresAt: expiry}, err

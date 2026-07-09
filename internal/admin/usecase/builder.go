@@ -5,7 +5,6 @@ import (
 
 	"github.com/squeakycheese75/open-incentives/internal/admin/usecase/campaign_create"
 	"github.com/squeakycheese75/open-incentives/internal/domain"
-	"github.com/squeakycheese75/open-incentives/internal/store"
 )
 
 type (
@@ -14,35 +13,25 @@ type (
 	}
 )
 
-type ScopedProjectStore interface {
-	Find(ctx context.Context, publicID string) (domain.Project, error)
-}
-
 type (
 	ProjectStore interface {
-		// Scope(orgID int64) interface {
-		// 	Find(ctx context.Context, publicID string) (domain.Project, error)
-		// }
-		Scope(orgID int64) store.ScopedProjectStore
-		// Scope(orgID int64) ScopedProjectStore
+		FindByOrgAndPublicID(ctx context.Context, orgID int64, publicID string) (domain.Project, error)
 	}
 	CampaignStore interface {
 		Create(ctx context.Context, campaign domain.Campaign) (domain.Campaign, error)
 	}
 )
 
-type AdminUsecaseContainer struct {
-	projectStore  ProjectStore
-	campaignStore CampaignStore
+type AdminUsecaseFactory struct {
+	createCampaignUsecase CreateCampaignUsecase
 }
 
-func NewAdminUsecaseContainer(projectStore ProjectStore, campaignStore CampaignStore) *AdminUsecaseContainer {
-	return &AdminUsecaseContainer{
-		projectStore:  projectStore,
-		campaignStore: campaignStore,
+func NewAdminUsecaseFactory(projectStore ProjectStore, campaignStore CampaignStore) *AdminUsecaseFactory {
+	return &AdminUsecaseFactory{
+		createCampaignUsecase: campaign_create.New(projectStore, campaignStore),
 	}
 }
 
-func (uc *AdminUsecaseContainer) CreateContainerUsecase() CreateCampaignUsecase {
-	return campaign_create.New(uc.projectStore, uc.campaignStore)
+func (uc *AdminUsecaseFactory) CreateContainerUsecase() CreateCampaignUsecase {
+	return uc.createCampaignUsecase
 }

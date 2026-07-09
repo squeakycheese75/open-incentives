@@ -2,6 +2,7 @@ package admin
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/squeakycheese75/open-incentives/internal/auth"
@@ -54,10 +55,14 @@ func (s *Handler) CreateCampaign(w http.ResponseWriter, r *http.Request) {
 		Rules:           ruleJSON,
 	})
 	if err != nil {
-		httputil.WriteJSON(w, http.StatusInternalServerError, map[string]any{
-			"error": "failed_to_create_campaign",
-			"msg":   err.Error(),
-		})
+		switch {
+		case errors.Is(err, domain.ErrInvalidInput):
+			httputil.WriteJSON(w, http.StatusBadRequest, map[string]any{"error": err.Error()})
+		case errors.Is(err, domain.ErrNotFound):
+			httputil.WriteJSON(w, http.StatusNotFound, map[string]any{"error": err.Error()})
+		default:
+			httputil.WriteJSON(w, http.StatusInternalServerError, map[string]any{"error": "failed_to_create_campaign"})
+		}
 		return
 	}
 
