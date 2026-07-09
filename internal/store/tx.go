@@ -7,7 +7,9 @@ func (s *store) WithTx(ctx context.Context, fn func(Store) error) error {
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() {
+		_ = tx.Rollback()
+	}()
 
 	txStore := &store{
 		db:      s.db,

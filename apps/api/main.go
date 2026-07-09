@@ -36,7 +36,9 @@ func run(cfg *configs.APIConfig) error {
 	if err != nil {
 		return fmt.Errorf("failed to open database: %w", err)
 	}
-	defer db.Close()
+	defer func() {
+		_ = db.Close()
+	}()
 
 	store := store.New(db)
 
