@@ -6,6 +6,7 @@ package sqlitedb
 
 import (
 	"database/sql"
+	"time"
 )
 
 type ApiKey struct {
@@ -17,10 +18,11 @@ type ApiKey struct {
 	KeyHash    string
 	Prefix     string
 	Status     string
-	CreatedAt  string
-	UpdatedAt  string
-	LastUsedAt sql.NullString
-	RevokedAt  sql.NullString
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+	DeletedAt  sql.NullTime
+	LastUsedAt sql.NullTime
+	RevokedAt  sql.NullTime
 }
 
 type Campaign struct {
@@ -31,18 +33,18 @@ type Campaign struct {
 	Name      string
 	Status    string
 	Rule      []byte
-	CreatedAt string
-	UpdatedAt string
-	DeletedAt sql.NullString
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt sql.NullTime
 }
 
 type Organization struct {
 	ID        int64
 	PublicID  string
 	Name      string
-	CreatedAt string
-	UpdatedAt string
-	DeletedAt sql.NullString
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt sql.NullTime
 }
 
 type Project struct {
@@ -50,7 +52,19 @@ type Project struct {
 	PublicID  string
 	OrgID     int64
 	Name      string
-	CreatedAt string
-	UpdatedAt string
-	DeletedAt sql.NullString
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt sql.NullTime
+}
+
+type User struct {
+	ID           int64
+	PublicID     string
+	OrgID        int64
+	Email        string
+	PasswordHash string
+	Role         string
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	DeletedAt    sql.NullTime
 }

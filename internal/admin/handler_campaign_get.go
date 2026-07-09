@@ -1,6 +1,10 @@
 package admin
 
-import "net/http"
+import (
+	"net/http"
+
+	"github.com/squeakycheese75/open-incentives/internal/httputil"
+)
 
 func (s *Handler) GetCampaign(w http.ResponseWriter, r *http.Request) {
 	slug := r.PathValue("slug")
@@ -9,14 +13,14 @@ func (s *Handler) GetCampaign(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	campaign, err := s.store.Get(r.Context(), slug)
+	campaign, err := s.store.Find(r.Context(), slug)
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{
+		httputil.WriteJSON(w, http.StatusInternalServerError, map[string]any{
 			"error": "failed_to_create_campaign",
 			"msg":   err.Error(),
 		})
 		return
 	}
 
-	writeJSON(w, http.StatusOK, campaign)
+	httputil.WriteJSON(w, http.StatusOK, campaign)
 }

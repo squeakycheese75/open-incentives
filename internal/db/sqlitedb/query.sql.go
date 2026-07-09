@@ -7,6 +7,7 @@ package sqlitedb
 
 import (
 	"context"
+	"time"
 )
 
 const createCampaign = `-- name: CreateCampaign :one
@@ -28,8 +29,8 @@ type CreateCampaignRow struct {
 	Name      string
 	Status    string
 	Rule      []byte
-	CreatedAt string
-	UpdatedAt string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 func (q *Queries) CreateCampaign(ctx context.Context, arg CreateCampaignParams) (CreateCampaignRow, error) {
@@ -76,8 +77,8 @@ type GetCampaignRow struct {
 	Name      string
 	Status    string
 	Rule      []byte
-	CreatedAt string
-	UpdatedAt string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 func (q *Queries) GetCampaign(ctx context.Context, publicID string) (GetCampaignRow, error) {
@@ -91,6 +92,62 @@ func (q *Queries) GetCampaign(ctx context.Context, publicID string) (GetCampaign
 		&i.Rule,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getOrgByPublicID = `-- name: GetOrgByPublicID :one
+SELECT id, public_id, name
+FROM organizations
+WHERE public_id = ?
+AND deleted_at IS NULL
+`
+
+type GetOrgByPublicIDRow struct {
+	ID       int64
+	PublicID string
+	Name     string
+}
+
+func (q *Queries) GetOrgByPublicID(ctx context.Context, publicID string) (GetOrgByPublicIDRow, error) {
+	row := q.db.QueryRowContext(ctx, getOrgByPublicID, publicID)
+	var i GetOrgByPublicIDRow
+	err := row.Scan(&i.ID, &i.PublicID, &i.Name)
+	return i, err
+}
+
+const getUserByEmailAndOrg = `-- name: GetUserByEmailAndOrg :one
+SELECT id, public_id, email, org_id, password_hash, role
+FROM users
+WHERE email = ?
+AND org_id = ?
+AND deleted_at IS NULL
+`
+
+type GetUserByEmailAndOrgParams struct {
+	Email string
+	OrgID int64
+}
+
+type GetUserByEmailAndOrgRow struct {
+	ID           int64
+	PublicID     string
+	Email        string
+	OrgID        int64
+	PasswordHash string
+	Role         string
+}
+
+func (q *Queries) GetUserByEmailAndOrg(ctx context.Context, arg GetUserByEmailAndOrgParams) (GetUserByEmailAndOrgRow, error) {
+	row := q.db.QueryRowContext(ctx, getUserByEmailAndOrg, arg.Email, arg.OrgID)
+	var i GetUserByEmailAndOrgRow
+	err := row.Scan(
+		&i.ID,
+		&i.PublicID,
+		&i.Email,
+		&i.OrgID,
+		&i.PasswordHash,
+		&i.Role,
 	)
 	return i, err
 }
@@ -109,8 +166,8 @@ type ListActiveCampaignsRow struct {
 	Name      string
 	Status    string
 	Rule      []byte
-	CreatedAt string
-	UpdatedAt string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 func (q *Queries) ListActiveCampaigns(ctx context.Context) ([]ListActiveCampaignsRow, error) {
@@ -157,8 +214,8 @@ type ListCampaignsRow struct {
 	Name      string
 	Status    string
 	Rule      []byte
-	CreatedAt string
-	UpdatedAt string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 func (q *Queries) ListCampaigns(ctx context.Context) ([]ListCampaignsRow, error) {
@@ -219,8 +276,8 @@ type UpdateCampaignRow struct {
 	Name      string
 	Status    string
 	Rule      []byte
-	CreatedAt string
-	UpdatedAt string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 func (q *Queries) UpdateCampaign(ctx context.Context, arg UpdateCampaignParams) (UpdateCampaignRow, error) {

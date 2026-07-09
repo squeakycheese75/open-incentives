@@ -38,3 +38,16 @@ RETURNING id, public_id, name, status, rule, created_at, updated_at;
 UPDATE campaigns
 SET deleted_at = CURRENT_TIMESTAMP
 WHERE id = ?;
+
+-- name: GetOrgByPublicID :one
+SELECT id, public_id, name
+FROM organizations
+WHERE public_id = ?
+AND deleted_at IS NULL;
+
+-- name: GetUserByEmailAndOrg :one
+SELECT id, public_id, email, org_id, password_hash, role
+FROM users
+WHERE email = ?
+AND org_id = ?
+AND deleted_at IS NULL;

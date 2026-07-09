@@ -12,8 +12,26 @@ import (
 )
 
 type APIConfig struct {
-	ServerPort int    `envconfig:"SERVER_PORT" default:"8080"`
-	DBDSN      string `envconfig:"DB_DSN"`
+	ServerPort   int    `envconfig:"SERVER_PORT" default:"8080"`
+	DatabasePath string `envconfig:"DATABASE_PATH" default:"/data/app.db"`
+	DatabaseSeed string `envconfig:"DATABASE_SEED" default:"true"`
+
+	ServerJWTSecret string `envconfig:"SERVER_JWT_SECRET" required:"true"`
+
+	Bootstrap BootstrapConfig
+}
+
+type BootstrapConfig struct {
+	Mode string `envconfig:"BOOTSTRAP_MODE" default:"auto"`
+	// auto  = seed/bootstrap only if DB is empty
+	// none  = never seed/bootstrap
+	// force = seed/bootstrap every startup, probably dev/test only
+
+	OrgName       string `envconfig:"BOOTSTRAP_ORG_NAME" default:"Default Organization"`
+	OrgSlug       string `envconfig:"BOOTSTRAP_ORG_SLUG" default:"default"`
+	ProjectName   string `envconfig:"BOOTSTRAP_PROJECT_NAME" default:"Default Project"`
+	AdminEmail    string `envconfig:"BOOTSTRAP_ADMIN_EMAIL" default:"admin@example.com"`
+	AdminPassword string `envconfig:"BOOTSTRAP_ADMIN_PASSWORD" default:"change-me"`
 }
 
 func LoadConfig[T any](prefix string) (*T, error) {

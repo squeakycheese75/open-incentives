@@ -13,9 +13,11 @@ import (
 
 	engine "github.com/squeakycheese75/open-incentives-engine"
 	"github.com/squeakycheese75/open-incentives/configs"
+	"github.com/squeakycheese75/open-incentives/pkg/services"
 
 	"github.com/squeakycheese75/open-incentives/internal/admin"
 	"github.com/squeakycheese75/open-incentives/internal/admin/auth"
+	usecase_auth "github.com/squeakycheese75/open-incentives/internal/admin/auth/usecase"
 	"github.com/squeakycheese75/open-incentives/internal/db/sqlitedb"
 	"github.com/squeakycheese75/open-incentives/internal/eval"
 	"github.com/squeakycheese75/open-incentives/internal/httpserver"
@@ -27,21 +29,27 @@ func run(cfg *configs.APIConfig) error {
 
 	engine := engine.New()
 
-	db, err := sqlitedb.NewDB(rootCtx, cfg.DBDSN, true)
+	db, err := sqlitedb.NewDB(rootCtx, sqlitedb.Config{
+		Path:      cfg.DatabasePath,
+		Bootstrap: cfg.Bootstrap,
+	})
 	if err != nil {
 		return fmt.Errorf("failed to open database: %w", err)
 	}
-	defer func() {
-		_ = db.Close()
-	}()
+	defer db.Close()
 
 	store := store.New(db)
 
-	adminHandler := admin.NewHandler(store)
-	authHandler := auth.NewHandler()
+	passwordSvc := services.NewBcryptPasswordService()
+	tokenSvc := services.NewJWTTokenService(cfg.ServerJWTSecret)
+
+	authContainer := usecase_auth.NewUserUsecaseContainer(store.Users(), store.Orgs(), tokenSvc, passwordSvc)
+
+	adminHandler := admin.NewHandler(store.Campaigns())
+	authHandler := auth.NewHandler(authContainer)
 	evalHandler := eval.NewHandler(engine)
 
-	mux := httpserver.New(adminHandler, authHandler, evalHandler)
+	mux := httpserver.New(adminHandler, authHandler, evalHandler, tokenSvc)
 
 	srv := &http.Server{
 		Addr:    ":" + fmt.Sprint(cfg.ServerPort),

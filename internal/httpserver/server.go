@@ -5,29 +5,41 @@ import (
 
 	"github.com/squeakycheese75/open-incentives/internal/admin"
 	auth "github.com/squeakycheese75/open-incentives/internal/admin/auth"
+	middleware "github.com/squeakycheese75/open-incentives/internal/auth"
 
 	"github.com/squeakycheese75/open-incentives/internal/eval"
 )
+
+type TokenVerifier interface {
+	Verify(tokenString string) (*middleware.Claims, error)
+}
 
 func New(
 	adminHandler *admin.Handler,
 	authHandler *auth.Handler,
 	evalHandler *eval.Handler,
+	tokenVerifier TokenVerifier,
 ) http.Handler {
 	root := http.NewServeMux()
 
 	adminMux := http.NewServeMux()
 	admin.RegisterProtected(adminMux, adminHandler)
 
-	adminAuthMux := http.NewServeMux()
-	auth.RegisterPublic(adminAuthMux, authHandler)
+	authMux := http.NewServeMux()
+	auth.RegisterPublic(authMux, authHandler)
+
+	root.Handle("/admin/auth/",
+		http.StripPrefix("/admin/auth", authMux),
+	)
+
+	root.Handle("/admin/",
+		middleware.AdminAuthMiddleware(tokenVerifier)(
+			http.StripPrefix("/admin", adminMux),
+		),
+	)
 
 	evalMux := http.NewServeMux()
 	eval.Register(evalMux, evalHandler)
-
-	root.Handle("/admin/",
-		http.StripPrefix("/admin", adminMux),
-	)
 
 	root.Handle("/v1/",
 		http.StripPrefix("/v1", evalMux),
@@ -35,28 +47,3 @@ func New(
 
 	return root
 }
-
-// mux := http.NewServeMux(adminHandler, evalHandler)
-
-// emaxmux.Register(m, "admin", evalHandler)
-// adminmux.Register(m, "admin", adminHandler)
-// mu
-
-// mux.HandleFunc("GET /admin/health", adminHandler.Health)
-// mux.HandleFunc("POST /admin/campaigns", adminHandler.CreateCampaign)
-// mux.HandleFunc("GET /admin/campaigns/{slug}", adminHandler.GetCampaign)
-// mux.HandleFunc("POST /admin/orgs", adminHandler.CreateOrg)
-// POST /orgs
-// POST /projects
-// POST /projects/{project_id}/api-keys
-// POST /projects/{project_id}/campaigns
-
-// mux.HandleFunc("GET /evaluate/health", evalHandler.Health)
-// mux.HandleFunc("POST /v1/evaluate", evalHandler.Evaluate)
-
-// GET    /v1/campaigns
-// POST   /v1/campaigns
-// GET    /v1/campaigns/:id
-// PATCH  /v1/campaigns/:id
-// DELETE /v1/campaigns/:id
-// POST   /v1/evaluate

@@ -6,20 +6,21 @@ import (
 
 	gonanoid "github.com/matoous/go-nanoid/v2"
 	"github.com/squeakycheese75/open-incentives/internal/domain"
+	"github.com/squeakycheese75/open-incentives/internal/httputil"
 )
 
 func (s *Handler) CreateCampaign(w http.ResponseWriter, r *http.Request) {
 	var req CreateCampaignRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]any{
+		httputil.WriteJSON(w, http.StatusBadRequest, map[string]any{
 			"error": "invalid_json",
 		})
 		return
 	}
 
 	if req.Name == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]any{
+		httputil.WriteJSON(w, http.StatusBadRequest, map[string]any{
 			"error": "missing_name",
 		})
 		return
@@ -27,7 +28,7 @@ func (s *Handler) CreateCampaign(w http.ResponseWriter, r *http.Request) {
 
 	slug, err := NewCampaignSlug()
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{
+		httputil.WriteJSON(w, http.StatusInternalServerError, map[string]any{
 			"error": "failed_to_generate_slug",
 		})
 		return
@@ -35,7 +36,7 @@ func (s *Handler) CreateCampaign(w http.ResponseWriter, r *http.Request) {
 
 	ruleJSON, err := json.Marshal(req.Rules)
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]any{
+		httputil.WriteJSON(w, http.StatusBadRequest, map[string]any{
 			"error": "invalid_rules",
 		})
 		return
@@ -48,14 +49,14 @@ func (s *Handler) CreateCampaign(w http.ResponseWriter, r *http.Request) {
 		Rule:   ruleJSON,
 	})
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{
+		httputil.WriteJSON(w, http.StatusInternalServerError, map[string]any{
 			"error": "failed_to_create_campaign",
 			"msg":   err.Error(),
 		})
 		return
 	}
 
-	writeJSON(w, http.StatusCreated, campaign)
+	httputil.WriteJSON(w, http.StatusCreated, campaign)
 }
 
 func NewCampaignSlug() (string, error) {

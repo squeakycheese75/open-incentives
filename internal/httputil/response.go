@@ -14,3 +14,13 @@ func WriteJSON(w http.ResponseWriter, status int, payload any) {
 		log.Printf("failed to write response: %v", err)
 	}
 }
+
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
+
+func WriteError(w http.ResponseWriter, status int, message string) {
+	WriteJSON(w, status, ErrorResponse{
+		Error: message,
+	})
+}
