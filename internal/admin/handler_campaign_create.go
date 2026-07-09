@@ -4,14 +4,19 @@ import (
 	"encoding/json"
 	"net/http"
 
-	gonanoid "github.com/matoous/go-nanoid/v2"
+	"github.com/squeakycheese75/open-incentives/internal/auth"
 	"github.com/squeakycheese75/open-incentives/internal/domain"
 	"github.com/squeakycheese75/open-incentives/internal/httputil"
 )
 
 func (s *Handler) CreateCampaign(w http.ResponseWriter, r *http.Request) {
-	var req CreateCampaignRequest
+	projectSlug := r.PathValue("project_slug")
+	if projectSlug == "" {
+		http.Error(w, "invalid_request", http.StatusBadRequest)
+		return
+	}
 
+	var req CreateCampaignRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		httputil.WriteJSON(w, http.StatusBadRequest, map[string]any{
 			"error": "invalid_json",
@@ -26,10 +31,10 @@ func (s *Handler) CreateCampaign(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	slug, err := NewCampaignSlug()
-	if err != nil {
-		httputil.WriteJSON(w, http.StatusInternalServerError, map[string]any{
-			"error": "failed_to_generate_slug",
+	authCtx, ok := auth.AuthFromContext(r.Context())
+	if !ok {
+		httputil.WriteJSON(w, http.StatusBadRequest, map[string]any{
+			"error": "invalid_claims",
 		})
 		return
 	}
@@ -42,11 +47,11 @@ func (s *Handler) CreateCampaign(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	campaign, err := s.store.Create(r.Context(), domain.Campaign{
-		Name:   req.Name,
-		Slug:   slug,
-		Status: "active",
-		Rule:   ruleJSON,
+	resval, err := s.adminContainer.CreateContainerUsecase().Execute(r.Context(), domain.CreateCampaignUsecaseInput{
+		OrgID:           authCtx.OrgID,
+		ProjectPublicID: projectSlug,
+		Name:            req.Name,
+		Rules:           ruleJSON,
 	})
 	if err != nil {
 		httputil.WriteJSON(w, http.StatusInternalServerError, map[string]any{
@@ -56,9 +61,5 @@ func (s *Handler) CreateCampaign(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputil.WriteJSON(w, http.StatusCreated, campaign)
-}
-
-func NewCampaignSlug() (string, error) {
-	return gonanoid.Generate("abcdefghijklmnopqrstuvwxyz0123456789", 12)
+	httputil.WriteJSON(w, http.StatusCreated, resval)
 }

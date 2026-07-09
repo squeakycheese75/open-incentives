@@ -1,27 +1,15 @@
 package admin
 
 import (
-	"context"
-	"errors"
-
-	"github.com/squeakycheese75/open-incentives/internal/domain"
-)
-
-var ErrInvalidRequest = errors.New("invalid request")
-
-type (
-	CampaignStore interface {
-		Create(ctx context.Context, campaign domain.Campaign) (domain.Campaign, error)
-		Find(ctx context.Context, id string) (domain.Campaign, error)
-	}
+	usecase_admin "github.com/squeakycheese75/open-incentives/internal/admin/usecase"
 )
 
 type Handler struct {
-	store CampaignStore
+	adminContainer *usecase_admin.AdminUsecaseContainer
 }
 
-func NewHandler(store CampaignStore) *Handler {
+func NewHandler(adminContainer *usecase_admin.AdminUsecaseContainer) *Handler {
 	return &Handler{
-		store: store,
+		adminContainer: adminContainer,
 	}
 }

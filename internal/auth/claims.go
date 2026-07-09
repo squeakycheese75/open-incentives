@@ -20,9 +20,9 @@ func ClaimsFromContext(ctx context.Context) (Claims, bool) {
 }
 
 type Claims struct {
-	UserID string `json:"user_id"`
-	OrgID  string `json:"org_id"`
-	Role   string `json:"role"`
+	UserPublicID string `json:"user_public_id"`
+	OrgPublicID  string `json:"org_public_id"`
+	Role         string `json:"role"`
 
 	jwt.RegisteredClaims
 }

@@ -18,6 +18,7 @@ import (
 	"github.com/squeakycheese75/open-incentives/internal/admin"
 	"github.com/squeakycheese75/open-incentives/internal/admin/auth"
 	usecase_auth "github.com/squeakycheese75/open-incentives/internal/admin/auth/usecase"
+	usecase_admin "github.com/squeakycheese75/open-incentives/internal/admin/usecase"
 	"github.com/squeakycheese75/open-incentives/internal/db/sqlitedb"
 	"github.com/squeakycheese75/open-incentives/internal/eval"
 	"github.com/squeakycheese75/open-incentives/internal/httpserver"
@@ -46,12 +47,15 @@ func run(cfg *configs.APIConfig) error {
 	tokenSvc := services.NewJWTTokenService(cfg.ServerJWTSecret)
 
 	authContainer := usecase_auth.NewUserUsecaseContainer(store.Users(), store.Orgs(), tokenSvc, passwordSvc)
+	adminContainer := usecase_admin.NewAdminUsecaseContainer(store.Projects(), store.Campaigns())
 
-	adminHandler := admin.NewHandler(store.Campaigns())
+	adminHandler := admin.NewHandler(adminContainer)
 	authHandler := auth.NewHandler(authContainer)
 	evalHandler := eval.NewHandler(engine)
 
-	mux := httpserver.New(adminHandler, authHandler, evalHandler, tokenSvc)
+	// authCache := cache.NewAuthContextCache(5 * time.Minute)
+
+	mux := httpserver.New(adminHandler, authHandler, evalHandler, tokenSvc, store.Orgs())
 
 	srv := &http.Server{
 		Addr:    ":" + fmt.Sprint(cfg.ServerPort),

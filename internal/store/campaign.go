@@ -32,19 +32,22 @@ func (s *campaignStore) Find(ctx context.Context, publicID string) (domain.Campa
 
 func (s *campaignStore) Create(ctx context.Context, c domain.Campaign) (domain.Campaign, error) {
 	result, err := s.queries.CreateCampaign(ctx, sqlitedb.CreateCampaignParams{
-		PublicID: c.Slug,
-		Name:     c.Name,
-		Rule:     c.Rule,
-		Status:   string(c.Status),
+		PublicID:  c.Slug,
+		ProjectID: c.ProjectID,
+		OrgID:     c.OrgId,
+		Name:      c.Name,
+		Rule:      c.Rule,
+		Status:    string(c.Status),
 	})
 	if err != nil {
 		return domain.Campaign{}, err
 	}
 
 	return domain.Campaign{
-		Name:   result.Name,
-		Status: domain.CampaignStatus(result.Status),
-		Slug:   result.PublicID,
-		Rule:   result.Rule,
+		Name:      result.Name,
+		Status:    domain.CampaignStatus(result.Status),
+		ProjectID: result.ProjectID,
+		Slug:      result.PublicID,
+		Rule:      result.Rule,
 	}, err
 }

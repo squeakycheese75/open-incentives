@@ -12,8 +12,10 @@ const (
 )
 
 type Campaign struct {
-	Slug   string
-	Name   string
-	Status CampaignStatus
-	Rule   json.RawMessage
+	Slug      string
+	ProjectID int64
+	OrgId     int64
+	Name      string
+	Status    CampaignStatus
+	Rule      json.RawMessage
 }

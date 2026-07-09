@@ -11,6 +11,7 @@ type Store interface {
 	Campaigns() CampaignStore
 	Users() UserStore
 	Orgs() OrgStore
+	Projects() ProjectStore
 
 	WithTx(ctx context.Context, fn func(Store) error) error
 	Close() error
@@ -45,6 +46,13 @@ func (s *store) Orgs() OrgStore {
 		queries: s.queries,
 	}
 }
+
+func (s *store) Projects() ProjectStore {
+	return &projectStore{
+		queries: s.queries,
+	}
+}
+
 func (s *store) Close() error {
 	return s.db.Close()
 }

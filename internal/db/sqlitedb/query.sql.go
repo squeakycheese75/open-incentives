@@ -11,16 +11,18 @@ import (
 )
 
 const createCampaign = `-- name: CreateCampaign :one
-INSERT INTO campaigns (name, public_id, status, rule)
-VALUES (?, ?, ?, ?)
-RETURNING id, public_id, name, status, rule, created_at, updated_at
+INSERT INTO campaigns (name, public_id, status, rule, project_id, org_id)
+VALUES (?, ?, ?, ?, ?, ?)
+RETURNING id, public_id, name, status, rule, project_id, org_id, created_at, updated_at
 `
 
 type CreateCampaignParams struct {
-	Name     string
-	PublicID string
-	Status   string
-	Rule     []byte
+	Name      string
+	PublicID  string
+	Status    string
+	Rule      []byte
+	ProjectID int64
+	OrgID     int64
 }
 
 type CreateCampaignRow struct {
@@ -29,6 +31,8 @@ type CreateCampaignRow struct {
 	Name      string
 	Status    string
 	Rule      []byte
+	ProjectID int64
+	OrgID     int64
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -39,6 +43,8 @@ func (q *Queries) CreateCampaign(ctx context.Context, arg CreateCampaignParams) 
 		arg.PublicID,
 		arg.Status,
 		arg.Rule,
+		arg.ProjectID,
+		arg.OrgID,
 	)
 	var i CreateCampaignRow
 	err := row.Scan(
@@ -47,6 +53,8 @@ func (q *Queries) CreateCampaign(ctx context.Context, arg CreateCampaignParams) 
 		&i.Name,
 		&i.Status,
 		&i.Rule,
+		&i.ProjectID,
+		&i.OrgID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -112,6 +120,32 @@ type GetOrgByPublicIDRow struct {
 func (q *Queries) GetOrgByPublicID(ctx context.Context, publicID string) (GetOrgByPublicIDRow, error) {
 	row := q.db.QueryRowContext(ctx, getOrgByPublicID, publicID)
 	var i GetOrgByPublicIDRow
+	err := row.Scan(&i.ID, &i.PublicID, &i.Name)
+	return i, err
+}
+
+const getProjectByPublicID = `-- name: GetProjectByPublicID :one
+SELECT id, public_id, name
+FROM projects
+WHERE public_id = ?
+AND org_id = ?
+AND deleted_at IS NULL
+`
+
+type GetProjectByPublicIDParams struct {
+	PublicID string
+	OrgID    int64
+}
+
+type GetProjectByPublicIDRow struct {
+	ID       int64
+	PublicID string
+	Name     string
+}
+
+func (q *Queries) GetProjectByPublicID(ctx context.Context, arg GetProjectByPublicIDParams) (GetProjectByPublicIDRow, error) {
+	row := q.db.QueryRowContext(ctx, getProjectByPublicID, arg.PublicID, arg.OrgID)
+	var i GetProjectByPublicIDRow
 	err := row.Scan(&i.ID, &i.PublicID, &i.Name)
 	return i, err
 }

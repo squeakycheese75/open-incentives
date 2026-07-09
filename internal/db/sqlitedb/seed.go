@@ -15,7 +15,9 @@ func Seed(ctx context.Context, db *sql.DB, cfg configs.BootstrapConfig) error {
 	if err != nil {
 		return fmt.Errorf("begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		_ = tx.Rollback()
+	}()
 
 	var orgID int64
 

@@ -2,6 +2,7 @@ package httpserver
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/squeakycheese75/open-incentives/internal/admin"
 	auth "github.com/squeakycheese75/open-incentives/internal/admin/auth"
@@ -19,6 +20,7 @@ func New(
 	authHandler *auth.Handler,
 	evalHandler *eval.Handler,
 	tokenVerifier TokenVerifier,
+	adminContextStore middleware.OrgContextStore,
 ) http.Handler {
 	root := http.NewServeMux()
 
@@ -32,11 +34,16 @@ func New(
 		http.StripPrefix("/admin/auth", authMux),
 	)
 
-	root.Handle("/admin/",
-		middleware.AdminAuthMiddleware(tokenVerifier)(
+	adminChain := middleware.AdminAuthMiddleware(tokenVerifier)(
+		middleware.AdminContextMiddleware(
+			adminContextStore,
+			middleware.NewAuthContextCache(5*time.Minute),
+		)(
 			http.StripPrefix("/admin", adminMux),
 		),
 	)
+
+	root.Handle("/admin/", adminChain)
 
 	evalMux := http.NewServeMux()
 	eval.Register(evalMux, evalHandler)

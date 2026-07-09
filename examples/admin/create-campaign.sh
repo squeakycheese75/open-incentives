@@ -5,7 +5,7 @@ API=${API:-http://localhost:8080}
 
 : "${TOKEN:?Please run 'source ./examples/admin/auth/login.sh' first.}"
 
-curl -X POST "$API/admin/campaigns" \
+curl -X POST "$API/admin/projects/proj_5043b130-2174-45c6-9165-e9d736d754e0/campaigns" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
