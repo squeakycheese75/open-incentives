@@ -8,17 +8,33 @@ import (
 )
 
 type ProjectStore interface {
-	FindByOrgAndPublicID(ctx context.Context, orgID int64, publicID string) (domain.Project, error)
+	Scope(orgID int64) ScopedProjectStore
+}
+
+type ScopedProjectStore interface {
+	Find(ctx context.Context, publicID string) (domain.Project, error)
 }
 
 type projectStore struct {
 	queries *sqlitedb.Queries
 }
 
-func (s *projectStore) FindByOrgAndPublicID(ctx context.Context, orgID int64, publicID string) (domain.Project, error) {
+type scopedProjectStore struct {
+	queries *sqlitedb.Queries
+	orgID   int64
+}
+
+func (s *projectStore) Scope(orgID int64) ScopedProjectStore {
+	return &scopedProjectStore{
+		queries: s.queries,
+		orgID:   orgID,
+	}
+}
+
+func (s *scopedProjectStore) Find(ctx context.Context, publicID string) (domain.Project, error) {
 	result, err := s.queries.GetProjectByPublicID(ctx, sqlitedb.GetProjectByPublicIDParams{
 		PublicID: publicID,
-		OrgID:    orgID,
+		OrgID:    s.orgID,
 	})
 	if err != nil {
 		return domain.Project{}, err

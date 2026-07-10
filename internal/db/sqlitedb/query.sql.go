@@ -11,16 +11,16 @@ import (
 )
 
 const createCampaign = `-- name: CreateCampaign :one
-INSERT INTO campaigns (name, public_id, status, rule, project_id, org_id)
+INSERT INTO campaigns (name, public_id, status, rules, project_id, org_id)
 VALUES (?, ?, ?, ?, ?, ?)
-RETURNING id, public_id, name, status, rule, project_id, org_id, created_at, updated_at
+RETURNING id, public_id, name, status, rules, project_id, org_id, created_at, updated_at
 `
 
 type CreateCampaignParams struct {
 	Name      string
 	PublicID  string
 	Status    string
-	Rule      []byte
+	Rules     []byte
 	ProjectID int64
 	OrgID     int64
 }
@@ -30,7 +30,7 @@ type CreateCampaignRow struct {
 	PublicID  string
 	Name      string
 	Status    string
-	Rule      []byte
+	Rules     []byte
 	ProjectID int64
 	OrgID     int64
 	CreatedAt time.Time
@@ -42,7 +42,7 @@ func (q *Queries) CreateCampaign(ctx context.Context, arg CreateCampaignParams) 
 		arg.Name,
 		arg.PublicID,
 		arg.Status,
-		arg.Rule,
+		arg.Rules,
 		arg.ProjectID,
 		arg.OrgID,
 	)
@@ -52,7 +52,7 @@ func (q *Queries) CreateCampaign(ctx context.Context, arg CreateCampaignParams) 
 		&i.PublicID,
 		&i.Name,
 		&i.Status,
-		&i.Rule,
+		&i.Rules,
 		&i.ProjectID,
 		&i.OrgID,
 		&i.CreatedAt,
@@ -73,31 +73,39 @@ func (q *Queries) DeleteCampaign(ctx context.Context, id int64) error {
 }
 
 const getCampaign = `-- name: GetCampaign :one
-SELECT id, public_id, name, status, rule, created_at, updated_at
+SELECT id, public_id, name, status, rules, created_at, updated_at
 FROM campaigns
 WHERE public_id = ?
+AND org_id = ?
+AND project_id = ?
 AND deleted_at IS NULL
 `
+
+type GetCampaignParams struct {
+	PublicID  string
+	OrgID     int64
+	ProjectID int64
+}
 
 type GetCampaignRow struct {
 	ID        int64
 	PublicID  string
 	Name      string
 	Status    string
-	Rule      []byte
+	Rules     []byte
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
 
-func (q *Queries) GetCampaign(ctx context.Context, publicID string) (GetCampaignRow, error) {
-	row := q.db.QueryRowContext(ctx, getCampaign, publicID)
+func (q *Queries) GetCampaign(ctx context.Context, arg GetCampaignParams) (GetCampaignRow, error) {
+	row := q.db.QueryRowContext(ctx, getCampaign, arg.PublicID, arg.OrgID, arg.ProjectID)
 	var i GetCampaignRow
 	err := row.Scan(
 		&i.ID,
 		&i.PublicID,
 		&i.Name,
 		&i.Status,
-		&i.Rule,
+		&i.Rules,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -187,7 +195,7 @@ func (q *Queries) GetUserByEmailAndOrg(ctx context.Context, arg GetUserByEmailAn
 }
 
 const listActiveCampaigns = `-- name: ListActiveCampaigns :many
-SELECT id, public_id, name, status, rule, created_at, updated_at
+SELECT id, public_id, name, status, rules, created_at, updated_at
 FROM campaigns
 WHERE status = 'active'
 AND deleted_at IS NULL
@@ -199,7 +207,7 @@ type ListActiveCampaignsRow struct {
 	PublicID  string
 	Name      string
 	Status    string
-	Rule      []byte
+	Rules     []byte
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -218,7 +226,7 @@ func (q *Queries) ListActiveCampaigns(ctx context.Context) ([]ListActiveCampaign
 			&i.PublicID,
 			&i.Name,
 			&i.Status,
-			&i.Rule,
+			&i.Rules,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -236,7 +244,7 @@ func (q *Queries) ListActiveCampaigns(ctx context.Context) ([]ListActiveCampaign
 }
 
 const listCampaigns = `-- name: ListCampaigns :many
-SELECT id, public_id, name, status, rule, created_at, updated_at
+SELECT id, public_id, name, status, rules, created_at, updated_at
 FROM campaigns
 WHERE deleted_at IS NULL
 ORDER BY created_at DESC
@@ -247,7 +255,7 @@ type ListCampaignsRow struct {
 	PublicID  string
 	Name      string
 	Status    string
-	Rule      []byte
+	Rules     []byte
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -266,7 +274,7 @@ func (q *Queries) ListCampaigns(ctx context.Context) ([]ListCampaignsRow, error)
 			&i.PublicID,
 			&i.Name,
 			&i.Status,
-			&i.Rule,
+			&i.Rules,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -289,18 +297,18 @@ SET
     public_id = ?,
     name = ?,
     status = ?,
-    rule = ?,
+    rules = ?,
     updated_at = CURRENT_TIMESTAMP
 WHERE id = ?
 AND deleted_at IS NULL
-RETURNING id, public_id, name, status, rule, created_at, updated_at
+RETURNING id, public_id, name, status, rules, created_at, updated_at
 `
 
 type UpdateCampaignParams struct {
 	PublicID string
 	Name     string
 	Status   string
-	Rule     []byte
+	Rules    []byte
 	ID       int64
 }
 
@@ -309,7 +317,7 @@ type UpdateCampaignRow struct {
 	PublicID  string
 	Name      string
 	Status    string
-	Rule      []byte
+	Rules     []byte
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -319,7 +327,7 @@ func (q *Queries) UpdateCampaign(ctx context.Context, arg UpdateCampaignParams) 
 		arg.PublicID,
 		arg.Name,
 		arg.Status,
-		arg.Rule,
+		arg.Rules,
 		arg.ID,
 	)
 	var i UpdateCampaignRow
@@ -328,7 +336,7 @@ func (q *Queries) UpdateCampaign(ctx context.Context, arg UpdateCampaignParams) 
 		&i.PublicID,
 		&i.Name,
 		&i.Status,
-		&i.Rule,
+		&i.Rules,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

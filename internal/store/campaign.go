@@ -2,41 +2,71 @@ package store
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 
 	"github.com/squeakycheese75/open-incentives/internal/db/sqlitedb"
 	"github.com/squeakycheese75/open-incentives/internal/domain"
 )
 
 type CampaignStore interface {
+	Scope(orgID int64) ScopedCampaignStore
+}
+
+type ScopedCampaignStore interface {
 	Create(ctx context.Context, campaign domain.Campaign) (domain.Campaign, error)
-	Find(ctx context.Context, id string) (domain.Campaign, error)
+	Find(ctx context.Context, campaignPublicID string, projectID int64) (domain.Campaign, error)
 }
 
 type campaignStore struct {
 	queries *sqlitedb.Queries
 }
 
-func (s *campaignStore) Find(ctx context.Context, publicID string) (domain.Campaign, error) {
-	result, err := s.queries.GetCampaign(ctx, publicID)
+type scopedCampaignStore struct {
+	queries *sqlitedb.Queries
+	orgID   int64
+}
+
+func (s *campaignStore) Scope(orgID int64) ScopedCampaignStore {
+	return &scopedCampaignStore{
+		queries: s.queries,
+		orgID:   orgID,
+	}
+}
+
+func (s *scopedCampaignStore) Find(ctx context.Context, campaignPublicID string, projectID int64) (domain.Campaign, error) {
+	result, err := s.queries.GetCampaign(ctx, sqlitedb.GetCampaignParams{
+		PublicID:  campaignPublicID,
+		OrgID:     s.orgID,
+		ProjectID: projectID,
+	})
 	if err != nil {
 		return domain.Campaign{}, err
 	}
 
+	rules := json.RawMessage(result.Rules)
+	if !json.Valid(rules) {
+		return domain.Campaign{}, fmt.Errorf(
+			"campaign %q contains invalid rules JSON",
+			result.PublicID,
+		)
+	}
+
 	return domain.Campaign{
-		Name:   result.Name,
-		Status: domain.CampaignStatus(result.Status),
-		Slug:   publicID,
-		Rule:   result.Rule,
-	}, err
+		PublicID: result.PublicID,
+		Name:     result.Name,
+		Status:   domain.CampaignStatus(result.Status),
+		Rules:    rules,
+	}, nil
 }
 
-func (s *campaignStore) Create(ctx context.Context, c domain.Campaign) (domain.Campaign, error) {
+func (s *scopedCampaignStore) Create(ctx context.Context, c domain.Campaign) (domain.Campaign, error) {
 	result, err := s.queries.CreateCampaign(ctx, sqlitedb.CreateCampaignParams{
-		PublicID:  c.Slug,
+		PublicID:  c.PublicID,
 		ProjectID: c.ProjectID,
 		OrgID:     c.OrgId,
 		Name:      c.Name,
-		Rule:      c.Rule,
+		Rules:     c.Rules,
 		Status:    string(c.Status),
 	})
 	if err != nil {
@@ -47,7 +77,7 @@ func (s *campaignStore) Create(ctx context.Context, c domain.Campaign) (domain.C
 		Name:      result.Name,
 		Status:    domain.CampaignStatus(result.Status),
 		ProjectID: result.ProjectID,
-		Slug:      result.PublicID,
-		Rule:      result.Rule,
+		PublicID:  result.PublicID,
+		Rules:     result.Rules,
 	}, err
 }

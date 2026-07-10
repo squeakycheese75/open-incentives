@@ -7,6 +7,7 @@ type EvaluationRequest struct {
 
 type Rule struct {
 	ID         string
+	Version    int
 	Name       string
 	Conditions Condition
 	Actions    []Action

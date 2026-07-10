@@ -28,7 +28,7 @@ type BootstrapConfig struct {
 	// force = seed/bootstrap every startup, probably dev/test only
 
 	OrgName       string `envconfig:"BOOTSTRAP_ORG_NAME" default:"Default Organization"`
-	OrgSlug       string `envconfig:"BOOTSTRAP_ORG_SLUG" default:"default"`
+	OrgPublicID   string `envconfig:"BOOTSTRAP_ORG_PUBLIC_ID" default:"org_default"`
 	ProjectName   string `envconfig:"BOOTSTRAP_PROJECT_NAME" default:"Default Project"`
 	AdminEmail    string `envconfig:"BOOTSTRAP_ADMIN_EMAIL" default:"admin@example.com"`
 	AdminPassword string `envconfig:"BOOTSTRAP_ADMIN_PASSWORD" default:"change-me"`

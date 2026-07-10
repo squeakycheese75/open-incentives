@@ -45,9 +45,10 @@ func run(cfg *configs.APIConfig) error {
 
 	passwordSvc := services.NewBcryptPasswordService()
 	tokenSvc := services.NewJWTTokenService(cfg.ServerJWTSecret)
+	publicIDGenerator := services.NanoIDGenerator{}
 
 	authUsecaseFactory := usecase_auth.NewUserUsecaseFactory(store.Users(), store.Orgs(), tokenSvc, passwordSvc)
-	adminUsecaseFactory := usecase_admin.NewAdminUsecaseFactory(store.Projects(), store.Campaigns())
+	adminUsecaseFactory := usecase_admin.NewAdminUsecaseFactory(store.Projects(), store.Campaigns(), publicIDGenerator, engine)
 
 	adminHandler := admin.NewHandler(adminUsecaseFactory)
 	authHandler := auth.NewHandler(authUsecaseFactory)

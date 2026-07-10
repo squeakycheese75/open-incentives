@@ -1,22 +1,24 @@
 -- name: GetCampaign :one
-SELECT id, public_id, name, status, rule, created_at, updated_at
+SELECT id, public_id, name, status, rules, created_at, updated_at
 FROM campaigns
 WHERE public_id = ?
+AND org_id = ?
+AND project_id = ?
 AND deleted_at IS NULL;
 
 -- name: CreateCampaign :one
-INSERT INTO campaigns (name, public_id, status, rule, project_id, org_id)
+INSERT INTO campaigns (name, public_id, status, rules, project_id, org_id)
 VALUES (?, ?, ?, ?, ?, ?)
-RETURNING id, public_id, name, status, rule, project_id, org_id, created_at, updated_at;
+RETURNING id, public_id, name, status, rules, project_id, org_id, created_at, updated_at;
 
 -- name: ListCampaigns :many
-SELECT id, public_id, name, status, rule, created_at, updated_at
+SELECT id, public_id, name, status, rules, created_at, updated_at
 FROM campaigns
 WHERE deleted_at IS NULL
 ORDER BY created_at DESC;
 
 -- name: ListActiveCampaigns :many
-SELECT id, public_id, name, status, rule, created_at, updated_at
+SELECT id, public_id, name, status, rules, created_at, updated_at
 FROM campaigns
 WHERE status = 'active'
 AND deleted_at IS NULL
@@ -28,11 +30,11 @@ SET
     public_id = ?,
     name = ?,
     status = ?,
-    rule = ?,
+    rules = ?,
     updated_at = CURRENT_TIMESTAMP
 WHERE id = ?
 AND deleted_at IS NULL
-RETURNING id, public_id, name, status, rule, created_at, updated_at;
+RETURNING id, public_id, name, status, rules, created_at, updated_at;
 
 -- name: DeleteCampaign :exec
 UPDATE campaigns

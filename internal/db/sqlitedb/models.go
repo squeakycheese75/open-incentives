@@ -32,7 +32,7 @@ type Campaign struct {
 	ProjectID int64
 	Name      string
 	Status    string
-	Rule      []byte
+	Rules     []byte
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt sql.NullTime

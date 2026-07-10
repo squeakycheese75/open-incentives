@@ -6,27 +6,38 @@ import (
 	"fmt"
 	"strings"
 
-	gonanoid "github.com/matoous/go-nanoid/v2"
 	"github.com/squeakycheese75/open-incentives/internal/domain"
+	"github.com/squeakycheese75/open-incentives/internal/store"
 )
 
-type ProjectStore interface {
-	FindByOrgAndPublicID(ctx context.Context, orgID int64, publicID string) (domain.Project, error)
-}
-
-type CampaignStore interface {
-	Create(ctx context.Context, campaign domain.Campaign) (domain.Campaign, error)
-}
+type (
+	PublicIDGenerator interface {
+		New(prefix string) (string, error)
+	}
+	CampaignStore interface {
+		Create(ctx context.Context, campaign domain.Campaign) (domain.Campaign, error)
+	}
+	ProjectStore interface {
+		Find(ctx context.Context, publicID string) (domain.Project, error)
+	}
+	RuleValidator interface {
+		ValidateRules(raw json.RawMessage) error
+	}
+)
 
 type Usecase struct {
-	projects  ProjectStore
-	campaigns CampaignStore
+	projects      store.ProjectStore
+	campaigns     store.CampaignStore
+	idGenerator   PublicIDGenerator
+	ruleValidator RuleValidator
 }
 
-func New(projects ProjectStore, campaigns CampaignStore) *Usecase {
+func New(projects store.ProjectStore, campaigns store.CampaignStore, idGenerator PublicIDGenerator, ruleValidator RuleValidator) *Usecase {
 	return &Usecase{
-		projects:  projects,
-		campaigns: campaigns,
+		projects:      projects,
+		campaigns:     campaigns,
+		idGenerator:   idGenerator,
+		ruleValidator: ruleValidator,
 	}
 }
 
@@ -45,38 +56,35 @@ func (uc *Usecase) Execute(ctx context.Context, input domain.CreateCampaignUseca
 		return domain.CreateCampaignUsecaseOutput{}, fmt.Errorf("campaign name is required: %w", domain.ErrInvalidInput)
 	}
 
-	project, err := uc.projects.FindByOrgAndPublicID(ctx, input.OrgID, projectPublicID)
+	project, err := uc.projects.Scope(input.OrgID).Find(ctx, projectPublicID)
 	if err != nil {
 		return domain.CreateCampaignUsecaseOutput{}, err
 	}
 
-	ruleJSON, err := json.Marshal(input.Rules)
-	if err != nil {
-		return domain.CreateCampaignUsecaseOutput{}, fmt.Errorf("invalid campaign rules: %w", domain.ErrInvalidInput)
-	}
-
-	slug, err := newCampaignSlug()
+	campaignPublicID, err := uc.idGenerator.New("camp")
 	if err != nil {
 		return domain.CreateCampaignUsecaseOutput{}, err
 	}
 
-	campaign, err := uc.campaigns.Create(ctx, domain.Campaign{
+	if err := uc.ruleValidator.ValidateRules(input.Rules); err != nil {
+		return domain.CreateCampaignUsecaseOutput{},
+			fmt.Errorf("invalid campaign rules: %w: %v", domain.ErrInvalidInput, err)
+	}
+
+	scopedCampaigns := uc.campaigns.Scope(input.OrgID)
+	campaign, err := scopedCampaigns.Create(ctx, domain.Campaign{
 		ProjectID: project.ID,
 		OrgId:     input.OrgID,
 		Name:      name,
-		Slug:      slug,
-		Status:    "active",
-		Rule:      ruleJSON,
+		PublicID:  campaignPublicID,
+		Status:    domain.CampaignStatusActive,
+		Rules:     input.Rules,
 	})
 	if err != nil {
 		return domain.CreateCampaignUsecaseOutput{}, err
 	}
 
 	return domain.CreateCampaignUsecaseOutput{
-		CampaignPublicID: campaign.Slug,
+		CampaignPublicID: campaign.PublicID,
 	}, nil
-}
-
-func newCampaignSlug() (string, error) {
-	return gonanoid.Generate("abcdefghijklmnopqrstuvwxyz0123456789", 12)
 }

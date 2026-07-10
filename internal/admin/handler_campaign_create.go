@@ -40,19 +40,11 @@ func (s *Handler) CreateCampaign(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ruleJSON, err := json.Marshal(req.Rules)
-	if err != nil {
-		httputil.WriteJSON(w, http.StatusBadRequest, map[string]any{
-			"error": "invalid_rules",
-		})
-		return
-	}
-
-	resval, err := s.adminContainer.CreateContainerUsecase().Execute(r.Context(), domain.CreateCampaignUsecaseInput{
+	out, err := s.adminContainer.CreateCampaignUsecase().Execute(r.Context(), domain.CreateCampaignUsecaseInput{
 		OrgID:           authCtx.OrgID,
 		ProjectPublicID: projectSlug,
 		Name:            req.Name,
-		Rules:           ruleJSON,
+		Rules:           req.Rules,
 	})
 	if err != nil {
 		switch {
@@ -66,5 +58,11 @@ func (s *Handler) CreateCampaign(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputil.WriteJSON(w, http.StatusCreated, resval)
+	httputil.WriteJSON(w, http.StatusCreated, CreateCampaignResponse{
+		CampaignPublicID: out.CampaignPublicID,
+	})
+}
+
+type CreateCampaignResponse struct {
+	CampaignPublicID string `json:"campaign_public_id"`
 }
