@@ -29,7 +29,7 @@ CREATE TABLE campaigns (
     project_id INTEGER NOT NULL,
     name TEXT NOT NULL,
     status TEXT NOT NULL CHECK (status IN ('active', 'inactive')),
-    rule BLOB NOT NULL,
+    rules BLOB NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at DATETIME,

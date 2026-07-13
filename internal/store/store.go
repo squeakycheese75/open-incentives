@@ -12,6 +12,7 @@ type Store interface {
 	Users() UserStore
 	Orgs() OrgStore
 	Projects() ProjectStore
+	APIKeys() APIKeyStore
 
 	WithTx(ctx context.Context, fn func(Store) error) error
 	Close() error
@@ -49,6 +50,12 @@ func (s *store) Orgs() OrgStore {
 
 func (s *store) Projects() ProjectStore {
 	return &projectStore{
+		queries: s.queries,
+	}
+}
+
+func (s *store) APIKeys() APIKeyStore {
+	return &apikeyStore{
 		queries: s.queries,
 	}
 }

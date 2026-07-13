@@ -17,6 +17,8 @@ func New(
 	evalHandler *eval.Handler,
 	tokenVerifier middleware.TokenVerifier,
 	adminContextStore middleware.OrgContextStore,
+	apiKeyStore middleware.ApiKeyContextStore,
+	apiKeyVerifier middleware.APIKeyVerifier,
 ) http.Handler {
 	root := http.NewServeMux()
 
@@ -45,7 +47,9 @@ func New(
 	eval.Register(evalMux, evalHandler)
 
 	root.Handle("/v1/",
-		http.StripPrefix("/v1", evalMux),
+		middleware.EvalAuthMiddleware(apiKeyStore, apiKeyVerifier)(
+			http.StripPrefix("/v1", evalMux),
+		),
 	)
 
 	return root

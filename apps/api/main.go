@@ -13,6 +13,8 @@ import (
 
 	engine "github.com/squeakycheese75/open-incentives-engine"
 	"github.com/squeakycheese75/open-incentives/configs"
+	"github.com/squeakycheese75/open-incentives/internal/adapters"
+
 	"github.com/squeakycheese75/open-incentives/internal/services"
 
 	"github.com/squeakycheese75/open-incentives/internal/admin"
@@ -21,6 +23,8 @@ import (
 	usecase_admin "github.com/squeakycheese75/open-incentives/internal/admin/usecase"
 	"github.com/squeakycheese75/open-incentives/internal/db/sqlitedb"
 	"github.com/squeakycheese75/open-incentives/internal/eval"
+	usecase_eval "github.com/squeakycheese75/open-incentives/internal/eval/usecase"
+
 	"github.com/squeakycheese75/open-incentives/internal/httpserver"
 	"github.com/squeakycheese75/open-incentives/internal/store"
 )
@@ -28,7 +32,8 @@ import (
 func run(cfg *configs.APIConfig) error {
 	rootCtx := context.Background()
 
-	engine := engine.New()
+	runtimeAdapter := adapters.New(engine.New())
+	actionApplier := services.NewActionApplier()
 
 	db, err := sqlitedb.NewDB(rootCtx, sqlitedb.Config{
 		Path:      cfg.DatabasePath,
@@ -46,17 +51,19 @@ func run(cfg *configs.APIConfig) error {
 	passwordSvc := services.NewBcryptPasswordService()
 	tokenSvc := services.NewJWTTokenService(cfg.ServerJWTSecret)
 	publicIDGenerator := services.NanoIDGenerator{}
+	cryptoSvc := services.NewCryptoService()
 
 	authUsecaseFactory := usecase_auth.NewUserUsecaseFactory(store.Users(), store.Orgs(), tokenSvc, passwordSvc)
-	adminUsecaseFactory := usecase_admin.NewAdminUsecaseFactory(store.Projects(), store.Campaigns(), publicIDGenerator, engine)
+	adminUsecaseFactory := usecase_admin.NewAdminUsecaseFactory(store.Projects(), store.Campaigns(), store.APIKeys(), publicIDGenerator, runtimeAdapter, cryptoSvc, passwordSvc)
+	evalUsecaseFactory := usecase_eval.NewAdminUsecaseFactory(store.Campaigns(), runtimeAdapter, actionApplier)
 
 	adminHandler := admin.NewHandler(adminUsecaseFactory)
 	authHandler := auth.NewHandler(authUsecaseFactory)
-	evalHandler := eval.NewHandler(engine)
+	evalHandler := eval.NewHandler(evalUsecaseFactory)
 
 	// authCache := cache.NewAuthContextCache(5 * time.Minute)
 
-	mux := httpserver.New(adminHandler, authHandler, evalHandler, tokenSvc, store.Orgs())
+	mux := httpserver.New(adminHandler, authHandler, evalHandler, tokenSvc, store.Orgs(), store.APIKeys(), passwordSvc)
 
 	srv := &http.Server{
 		Addr:    ":" + fmt.Sprint(cfg.ServerPort),

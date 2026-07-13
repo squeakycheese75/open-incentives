@@ -16,6 +16,7 @@ type Campaign struct {
 	ProjectID int64
 	OrgId     int64
 	Name      string
+	KeyHash   string
 	Status    CampaignStatus
 	Rules     json.RawMessage
 }

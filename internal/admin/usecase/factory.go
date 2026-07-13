@@ -6,6 +6,7 @@ import (
 
 	"github.com/squeakycheese75/open-incentives/internal/admin/usecase/campaign_create"
 	"github.com/squeakycheese75/open-incentives/internal/admin/usecase/campaign_get"
+	project_create_apikey "github.com/squeakycheese75/open-incentives/internal/admin/usecase/project_apikey_create"
 	"github.com/squeakycheese75/open-incentives/internal/domain"
 	"github.com/squeakycheese75/open-incentives/internal/store"
 )
@@ -16,6 +17,9 @@ type (
 	}
 	GetCampaignUsecase interface {
 		Execute(ctx context.Context, input domain.GetCampaignUsecaseInput) (domain.GetCampaignUsecaseOutput, error)
+	}
+	CreateProjectAPIKeyUsecase interface {
+		Execute(ctx context.Context, input domain.CreateProjectAPIKEYUsecaseInput) (domain.CreateProjectAPIKEYUsecaseOutput, error)
 	}
 )
 
@@ -30,8 +34,20 @@ type (
 		Create(ctx context.Context, campaign domain.Campaign) (domain.Campaign, error)
 		Find(ctx context.Context, publicID string) (domain.Campaign, error)
 	}
+	APIKeyStore interface {
+		Scope(orgID int64) ScopedAPIKeyStore
+	}
+	ScopedAPIKeyStore interface {
+		Create(ctx context.Context, in domain.APIKey) (domain.APIKey, error)
+	}
 	CampaignStore interface {
 		Scope(orgID int64) ScopedCampaignStore
+	}
+)
+
+type (
+	CryptoSvc interface {
+		GenerateKey(size int) ([]byte, error)
 	}
 	PublicIDGenerator interface {
 		New(prefix string) (string, error)
@@ -39,17 +55,30 @@ type (
 	RuleValidator interface {
 		ValidateRules(raw json.RawMessage) error
 	}
+	PasswordSvc interface {
+		Hash(password string) (string, error)
+	}
 )
 
 type AdminUsecaseFactory struct {
-	createCampaignUsecase CreateCampaignUsecase
-	getCampaignUsecase    GetCampaignUsecase
+	createCampaignUsecase      CreateCampaignUsecase
+	getCampaignUsecase         GetCampaignUsecase
+	createProjectAPIKeyUsecase CreateProjectAPIKeyUsecase
 }
 
-func NewAdminUsecaseFactory(projectStore store.ProjectStore, campaignStore store.CampaignStore, idGenerator PublicIDGenerator, ruleValidator RuleValidator) *AdminUsecaseFactory {
+func NewAdminUsecaseFactory(
+	projectStore store.ProjectStore,
+	campaignStore store.CampaignStore,
+	apiKeyStore store.APIKeyStore,
+	idGenerator PublicIDGenerator,
+	ruleValidator RuleValidator,
+	cryptoSvc CryptoSvc,
+	passwordSvc PasswordSvc,
+) *AdminUsecaseFactory {
 	return &AdminUsecaseFactory{
-		createCampaignUsecase: campaign_create.New(projectStore, campaignStore, idGenerator, ruleValidator),
-		getCampaignUsecase:    campaign_get.New(campaignStore, projectStore),
+		createCampaignUsecase:      campaign_create.New(projectStore, campaignStore, idGenerator, ruleValidator),
+		getCampaignUsecase:         campaign_get.New(campaignStore, projectStore),
+		createProjectAPIKeyUsecase: project_create_apikey.New(cryptoSvc, idGenerator, apiKeyStore, passwordSvc, projectStore),
 	}
 }
 
@@ -59,4 +88,8 @@ func (f *AdminUsecaseFactory) CreateCampaignUsecase() CreateCampaignUsecase {
 
 func (f *AdminUsecaseFactory) GetCampaignUsecase() GetCampaignUsecase {
 	return f.getCampaignUsecase
+}
+
+func (f *AdminUsecaseFactory) CreateProjectAPIKeyUsecase() CreateProjectAPIKeyUsecase {
+	return f.createProjectAPIKeyUsecase
 }

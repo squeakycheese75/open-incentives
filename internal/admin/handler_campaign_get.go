@@ -11,13 +11,13 @@ import (
 )
 
 func (s *Handler) GetCampaign(w http.ResponseWriter, r *http.Request) {
-	projectSlug := r.PathValue("project_slug")
+	projectSlug := r.PathValue("project_public_id")
 	if projectSlug == "" {
 		http.Error(w, "invalid_request", http.StatusBadRequest)
 		return
 	}
 
-	campaignSlug := r.PathValue("campaign_slug")
+	campaignSlug := r.PathValue("campaign_public_id")
 	if campaignSlug == "" {
 		http.Error(w, "invalid_request", http.StatusBadRequest)
 		return

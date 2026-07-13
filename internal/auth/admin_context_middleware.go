@@ -14,6 +14,9 @@ type (
 	OrgContextStore interface {
 		Find(rctx context.Context, publicID string) (domain.Organization, error)
 	}
+	ApiKeyContextStore interface {
+		FindByPublicID(ctx context.Context, publicID string) (domain.APIKey, error)
+	}
 )
 
 type cachedAuthContext struct {

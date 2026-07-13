@@ -1,6 +1,9 @@
 package domain
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"time"
+)
 
 type CreateCampaignUsecaseInput struct {
 	OrgID           int64
@@ -22,4 +25,17 @@ type GetCampaignUsecaseInput struct {
 
 type GetCampaignUsecaseOutput struct {
 	Campaign
+}
+
+type CreateProjectAPIKEYUsecaseInput struct {
+	OrgID           int64
+	ProjectPublicID string
+	Name            string
+	Description     string
+}
+
+type CreateProjectAPIKEYUsecaseOutput struct {
+	APIKeyPublicID string
+	APIKey         string
+	CreatedAt      time.Time
 }

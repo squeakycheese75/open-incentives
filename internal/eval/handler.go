@@ -1,23 +1,15 @@
 package eval
 
 import (
-	"context"
-
-	engine "github.com/squeakycheese75/open-incentives-engine"
-)
-
-type (
-	Engine interface {
-		Evaluate(ctx context.Context, req engine.EvaluationRequest) (engine.EvaluationResult, error)
-	}
+	usecase_eval "github.com/squeakycheese75/open-incentives/internal/eval/usecase"
 )
 
 type Handler struct {
-	engine Engine
+	evalContainer *usecase_eval.EvalUsecaseFactory
 }
 
-func NewHandler(engine Engine) *Handler {
+func NewHandler(evalContainer *usecase_eval.EvalUsecaseFactory) *Handler {
 	return &Handler{
-		engine: engine,
+		evalContainer: evalContainer,
 	}
 }
