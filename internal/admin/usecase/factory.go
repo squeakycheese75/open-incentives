@@ -6,6 +6,7 @@ import (
 
 	"github.com/squeakycheese75/open-incentives/internal/admin/usecase/campaign_create"
 	"github.com/squeakycheese75/open-incentives/internal/admin/usecase/campaign_get"
+	"github.com/squeakycheese75/open-incentives/internal/admin/usecase/campaign_list"
 	project_create_apikey "github.com/squeakycheese75/open-incentives/internal/admin/usecase/project_apikey_create"
 	"github.com/squeakycheese75/open-incentives/internal/domain"
 	"github.com/squeakycheese75/open-incentives/internal/store"
@@ -20,6 +21,9 @@ type (
 	}
 	CreateProjectAPIKeyUsecase interface {
 		Execute(ctx context.Context, input domain.CreateProjectAPIKEYUsecaseInput) (domain.CreateProjectAPIKEYUsecaseOutput, error)
+	}
+	ListCampaignsUsecase interface {
+		Execute(ctx context.Context, input domain.ListCampaignsUsecaseInput) (domain.ListCampaignsUsecaseOutput, error)
 	}
 )
 
@@ -96,6 +100,10 @@ func (f *AdminUsecaseFactory) CreateCampaignUsecase(orgID int64) CreateCampaignU
 
 func (f *AdminUsecaseFactory) GetCampaignUsecase(orgID int64) GetCampaignUsecase {
 	return campaign_get.New(f.campaignStore.Scope(orgID), f.projectStore.Scope(orgID))
+}
+
+func (f *AdminUsecaseFactory) ListCampaignUsecase(orgID int64) ListCampaignsUsecase {
+	return campaign_list.New(f.campaignStore.Scope(orgID), f.projectStore.Scope(orgID))
 }
 
 func (f *AdminUsecaseFactory) CreateProjectAPIKeyUsecase(orgID int64) CreateProjectAPIKeyUsecase {

@@ -48,10 +48,6 @@ func New(projects ScopedProjectStore, campaigns ScopedCampaignStore, idGenerator
 }
 
 func (uc *Usecase) Execute(ctx context.Context, input domain.CreateCampaignUsecaseInput) (domain.CreateCampaignUsecaseOutput, error) {
-	if input.OrgID == 0 {
-		return domain.CreateCampaignUsecaseOutput{}, fmt.Errorf("org id is required: %w", domain.ErrInvalidInput)
-	}
-
 	projectPublicID := strings.TrimSpace(input.ProjectPublicID)
 	if projectPublicID == "" {
 		return domain.CreateCampaignUsecaseOutput{}, fmt.Errorf("project id is required: %w", domain.ErrInvalidInput)
@@ -79,7 +75,6 @@ func (uc *Usecase) Execute(ctx context.Context, input domain.CreateCampaignUseca
 
 	campaign, err := uc.campaigns.Create(ctx, domain.Campaign{
 		ProjectID: project.ID,
-		OrgId:     input.OrgID,
 		Name:      name,
 		PublicID:  campaignPublicID,
 		Status:    domain.CampaignStatusActive,

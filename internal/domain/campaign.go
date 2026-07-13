@@ -14,7 +14,6 @@ const (
 type Campaign struct {
 	PublicID  string
 	ProjectID int64
-	OrgId     int64
 	Name      string
 	KeyHash   string
 	Status    CampaignStatus

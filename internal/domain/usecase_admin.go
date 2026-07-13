@@ -6,7 +6,6 @@ import (
 )
 
 type CreateCampaignUsecaseInput struct {
-	OrgID           int64
 	ProjectPublicID string
 	Name            string
 	Rules           json.RawMessage
@@ -18,7 +17,6 @@ type CreateCampaignUsecaseOutput struct {
 }
 
 type GetCampaignUsecaseInput struct {
-	OrgID            int64
 	CampaignPublicID string
 	ProjectPublicID  string
 }
@@ -38,4 +36,12 @@ type CreateProjectAPIKEYUsecaseOutput struct {
 	APIKeyPublicID string
 	APIKey         string
 	CreatedAt      time.Time
+}
+
+type ListCampaignsUsecaseInput struct {
+	ProjectPublicID string
+}
+
+type ListCampaignsUsecaseOutput struct {
+	Campaigns []Campaign
 }

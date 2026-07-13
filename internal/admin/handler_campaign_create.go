@@ -42,7 +42,6 @@ func (s *Handler) CreateCampaign(w http.ResponseWriter, r *http.Request) {
 	}
 
 	out, err := s.adminContainer.CreateCampaignUsecase(authCtx.OrgID).Execute(r.Context(), domain.CreateCampaignUsecaseInput{
-		OrgID:           authCtx.OrgID,
 		ProjectPublicID: projectSlug,
 		Name:            req.Name,
 		Rules:           req.Rules,

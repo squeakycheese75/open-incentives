@@ -95,7 +95,6 @@ func (s *scopedCampaignStore) Create(ctx context.Context, c domain.Campaign) (do
 	result, err := s.queries.CreateCampaign(ctx, sqlitedb.CreateCampaignParams{
 		PublicID:  c.PublicID,
 		ProjectID: c.ProjectID,
-		OrgID:     c.OrgId,
 		Name:      c.Name,
 		Rules:     c.Rules,
 		Status:    string(c.Status),
