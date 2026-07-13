@@ -288,9 +288,9 @@ func (q *Queries) GetUserByEmailAndOrg(ctx context.Context, arg GetUserByEmailAn
 const listActiveCampaignsByProject = `-- name: ListActiveCampaignsByProject :many
 SELECT id, public_id, name, status, rules, created_at, updated_at
 FROM campaigns
-WHERE status = 'active'
-AND org_id = ?
+WHERE org_id = ?
 AND project_id = ?
+AND status = 'active'
 AND deleted_at IS NULL
 ORDER BY created_at DESC
 `

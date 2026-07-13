@@ -7,7 +7,6 @@ type Customer struct {
 }
 
 type EvaluateUsecaseInput struct {
-	OrgID     int64
 	ProjectID int64
 	Customer  Customer
 	Cart      Cart

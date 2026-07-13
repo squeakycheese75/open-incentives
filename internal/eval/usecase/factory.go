@@ -28,15 +28,20 @@ type (
 )
 
 type EvalUsecaseFactory struct {
-	evalUsecase EvaluateUsecase
+	runtimeAdapter RuntimeAdapter
+	actionApplier  ActionApplier
+	evalUsecase    EvaluateUsecase
+	campaignStore  store.CampaignStore
 }
 
 func NewAdminUsecaseFactory(campaignStore store.CampaignStore, runtimeAdapter RuntimeAdapter, actionApplier ActionApplier) *EvalUsecaseFactory {
 	return &EvalUsecaseFactory{
-		evalUsecase: evaluate.NewEvaluateUseCase(campaignStore, runtimeAdapter, actionApplier),
+		actionApplier:  actionApplier,
+		runtimeAdapter: runtimeAdapter,
+		campaignStore:  campaignStore,
 	}
 }
 
-func (f *EvalUsecaseFactory) EvaluateUsecase() EvaluateUsecase {
-	return f.evalUsecase
+func (f *EvalUsecaseFactory) EvaluateUsecase(orgID int64) EvaluateUsecase {
+	return evaluate.NewEvaluateUseCase(f.campaignStore.Scope(orgID), f.runtimeAdapter, f.actionApplier)
 }

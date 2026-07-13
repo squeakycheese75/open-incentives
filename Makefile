@@ -14,3 +14,8 @@ test:
 
 lint:
 	golangci-lint version && golangci-lint run --verbose  -E  misspell    
+
+generate-mocks:
+	@echo "Generating mocks..."
+# 	mockgen -destination=internal/store/mocks/campaign_store.go -package=mocks github.com/squeakycheese75/open-incentives/internal/store CampaignStore,ScopedCampaignStore
+	mockgen -source=internal/eval/usecase/evaluate/main.go -destination=internal/eval/usecase/evaluate/mocks/mocks.go -package=mocks

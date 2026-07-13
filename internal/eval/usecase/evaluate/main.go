@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/squeakycheese75/open-incentives/internal/domain"
-	"github.com/squeakycheese75/open-incentives/internal/store"
 )
 
 type (
@@ -20,19 +19,20 @@ type (
 			req domain.RuleEvaluationRequest,
 		) (domain.RuleEvaluationResult, error)
 	}
-	// CampaignStore interface {
-	// 	List(ctx context.Context, projectID int64) ([]domain.Campaign, error)
-	// }
+	ScopedCampaignStore interface {
+		List(ctx context.Context, projectID int64) ([]domain.Campaign, error)
+	}
 )
 
+//go:generate mockgen -source=main.go -destination=mocks/mocks.go -package=mocks
+
 type Usecase struct {
-	campaigns     store.CampaignStore
+	campaigns     ScopedCampaignStore
 	actionApplier ActionApplier
 	runtime       Runtime
 }
-type EvaluationResult struct{}
 
-func NewEvaluateUseCase(campaigns store.CampaignStore, runtime Runtime, actionApplier ActionApplier) *Usecase {
+func NewEvaluateUseCase(campaigns ScopedCampaignStore, runtime Runtime, actionApplier ActionApplier) *Usecase {
 	return &Usecase{
 		campaigns:     campaigns,
 		runtime:       runtime,
@@ -44,9 +44,7 @@ func (uc *Usecase) Execute(
 	ctx context.Context,
 	input domain.EvaluateUsecaseInput,
 ) (domain.EvaluateUsecaseOutput, error) {
-	campaigns, err := uc.campaigns.
-		Scope(input.OrgID).
-		List(ctx, input.ProjectID)
+	campaigns, err := uc.campaigns.List(ctx, input.ProjectID)
 	if err != nil {
 		return domain.EvaluateUsecaseOutput{}, err
 	}

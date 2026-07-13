@@ -82,8 +82,7 @@ func (h *Handler) Evaluate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	output, err := h.evalContainer.EvaluateUsecase().Execute(r.Context(), domain.EvaluateUsecaseInput{
-		OrgID:     scope.OrgID,
+	output, err := h.evalContainer.EvaluateUsecase(scope.OrgID).Execute(r.Context(), domain.EvaluateUsecaseInput{
 		ProjectID: scope.ProjectID,
 		Customer: domain.Customer{
 			ID:      req.Customer.ID,
