@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"log/slog"
 	"net/http"
@@ -11,24 +12,66 @@ import (
 	"time"
 
 	engine "github.com/squeakycheese75/open-incentives-engine"
-	handlers "github.com/squeakycheese75/open-incentives/internal/api"
+	"github.com/squeakycheese75/open-incentives/configs"
+	"github.com/squeakycheese75/open-incentives/internal/adapters"
+
+	"github.com/squeakycheese75/open-incentives/internal/services"
+
+	"github.com/squeakycheese75/open-incentives/internal/admin"
+	"github.com/squeakycheese75/open-incentives/internal/admin/auth"
+	usecase_auth "github.com/squeakycheese75/open-incentives/internal/admin/auth/usecase"
+	usecase_admin "github.com/squeakycheese75/open-incentives/internal/admin/usecase"
+	"github.com/squeakycheese75/open-incentives/internal/db/sqlitedb"
+	"github.com/squeakycheese75/open-incentives/internal/eval"
+	usecase_eval "github.com/squeakycheese75/open-incentives/internal/eval/usecase"
+
+	"github.com/squeakycheese75/open-incentives/internal/httpserver"
+	"github.com/squeakycheese75/open-incentives/internal/store"
 )
 
-func main() {
-	engine := engine.New()
-	h := handlers.NewHandlers(engine)
+func run(cfg *configs.APIConfig) error {
+	rootCtx := context.Background()
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("POST /v1/evaluate", h.Evaluate)
-	mux.HandleFunc("GET /health", h.Health)
+	runtimeAdapter := adapters.New(engine.New())
+	actionApplier := services.NewActionApplier()
+
+	db, err := sqlitedb.NewDB(rootCtx, sqlitedb.Config{
+		Path:      cfg.DatabasePath,
+		Bootstrap: cfg.Bootstrap,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to open database: %w", err)
+	}
+	defer func() {
+		_ = db.Close()
+	}()
+
+	store := store.New(db)
+
+	passwordSvc := services.NewBcryptPasswordService()
+	tokenSvc := services.NewJWTTokenService(cfg.ServerJWTSecret)
+	publicIDGenerator := services.NanoIDGenerator{}
+	cryptoSvc := services.NewCryptoService()
+
+	authUsecaseFactory := usecase_auth.NewUserUsecaseFactory(store.Users(), store.Orgs(), tokenSvc, passwordSvc)
+	adminUsecaseFactory := usecase_admin.NewAdminUsecaseFactory(store.Projects(), store.Campaigns(), store.APIKeys(), publicIDGenerator, runtimeAdapter, cryptoSvc, passwordSvc)
+	evalUsecaseFactory := usecase_eval.NewAdminUsecaseFactory(store.Campaigns(), runtimeAdapter, actionApplier)
+
+	adminHandler := admin.NewHandler(adminUsecaseFactory)
+	authHandler := auth.NewHandler(authUsecaseFactory)
+	evalHandler := eval.NewHandler(evalUsecaseFactory)
+
+	// authCache := cache.NewAuthContextCache(5 * time.Minute)
+
+	mux := httpserver.New(adminHandler, authHandler, evalHandler, tokenSvc, store.Orgs(), store.APIKeys(), passwordSvc)
 
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    ":" + fmt.Sprint(cfg.ServerPort),
 		Handler: mux,
 	}
 
 	go func() {
-		log.Println("api listening on :8080")
+		log.Printf("Starting HTTP server on port %d", cfg.ServerPort)
 
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatal(err)
@@ -51,4 +94,17 @@ func main() {
 
 	<-ctx.Done()
 	slog.Warn("Server exiting ...")
+
+	return nil
+}
+
+func main() {
+	cfg, err := configs.LoadConfig[configs.APIConfig]("")
+	if err != nil {
+		panic(fmt.Errorf("failed to load config: %v", err.Error()))
+	}
+
+	if err := run(cfg); err != nil {
+		panic(err)
+	}
 }

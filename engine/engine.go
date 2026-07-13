@@ -2,10 +2,12 @@ package engine
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 )
 
 type Runtime interface {
+	ValidateRules(raw json.RawMessage) error
 	Evaluate(ctx context.Context, req EvaluationRequest) (EvaluationResult, error)
 }
 
@@ -49,4 +51,24 @@ func (e *engineImpl) Evaluate(ctx context.Context, req EvaluationRequest) (Evalu
 	}
 
 	return result, nil
+}
+
+func (e *engineImpl) ValidateRules(raw json.RawMessage) error {
+	var rules []Rule
+
+	if err := json.Unmarshal(raw, &rules); err != nil {
+		return fmt.Errorf("decode rules: %w", err)
+	}
+
+	if len(rules) == 0 {
+		return fmt.Errorf("at least one rule is required")
+	}
+
+	for i, rule := range rules {
+		if err := rule.Validate(); err != nil {
+			return fmt.Errorf("rule %d: %w", i, err)
+		}
+	}
+
+	return nil
 }
