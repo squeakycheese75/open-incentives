@@ -29,8 +29,7 @@ func (s *Handler) GetCampaign(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	uc := s.adminContainer.GetCampaignUsecase()
-	out, err := uc.Execute(r.Context(), domain.GetCampaignUsecaseInput{
+	out, err := s.adminContainer.GetCampaignUsecase(authCtx.OrgID).Execute(r.Context(), domain.GetCampaignUsecaseInput{
 		OrgID:            authCtx.OrgID,
 		CampaignPublicID: campaignSlug,
 		ProjectPublicID:  projectSlug,

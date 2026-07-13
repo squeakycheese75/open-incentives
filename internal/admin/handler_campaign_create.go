@@ -41,7 +41,7 @@ func (s *Handler) CreateCampaign(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out, err := s.adminContainer.CreateCampaignUsecase().Execute(r.Context(), domain.CreateCampaignUsecaseInput{
+	out, err := s.adminContainer.CreateCampaignUsecase(authCtx.OrgID).Execute(r.Context(), domain.CreateCampaignUsecaseInput{
 		OrgID:           authCtx.OrgID,
 		ProjectPublicID: projectSlug,
 		Name:            req.Name,

@@ -6,15 +6,23 @@ import (
 	"strings"
 
 	"github.com/squeakycheese75/open-incentives/internal/domain"
-	"github.com/squeakycheese75/open-incentives/internal/store"
+)
+
+type (
+	ScopedProjectStore interface {
+		Find(ctx context.Context, publicID string) (domain.Project, error)
+	}
+	ScopedCampaignStore interface {
+		Find(ctx context.Context, campaignPublicID string, projectID int64) (domain.Campaign, error)
+	}
 )
 
 type Usecase struct {
-	campaigns store.CampaignStore
-	projects  store.ProjectStore
+	campaigns ScopedCampaignStore
+	projects  ScopedProjectStore
 }
 
-func New(campaigns store.CampaignStore, projects store.ProjectStore) *Usecase {
+func New(campaigns ScopedCampaignStore, projects ScopedProjectStore) *Usecase {
 	return &Usecase{campaigns: campaigns, projects: projects}
 }
 
@@ -29,12 +37,12 @@ func (uc *Usecase) Execute(ctx context.Context, input domain.GetCampaignUsecaseI
 		return domain.GetCampaignUsecaseOutput{}, fmt.Errorf("project id is required: %w", domain.ErrInvalidInput)
 	}
 
-	project, err := uc.projects.Scope(input.OrgID).Find(ctx, projectPublicID)
+	project, err := uc.projects.Find(ctx, projectPublicID)
 	if err != nil {
 		return domain.GetCampaignUsecaseOutput{}, err
 	}
 
-	campaign, err := uc.campaigns.Scope(input.OrgID).Find(ctx, campaignPublicID, project.ID)
+	campaign, err := uc.campaigns.Find(ctx, campaignPublicID, project.ID)
 	if err != nil {
 		return domain.GetCampaignUsecaseOutput{}, err
 	}

@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/squeakycheese75/open-incentives/internal/domain"
-	"github.com/squeakycheese75/open-incentives/internal/store"
 )
 
 const prefix string = "api"
@@ -19,29 +18,29 @@ type (
 	PublicIDGenerator interface {
 		New(prefix string) (string, error)
 	}
-	APIKeyStore interface {
-		Create(ctx context.Context, in domain.APIKey) (domain.APIKey, error)
-	}
-	ProjectStore interface {
-		Find(ctx context.Context, publicID string) (domain.Project, error)
-	}
 	PasswordSvc interface {
 		Hash(password string) (string, error)
+	}
+	ScopedProjectStore interface {
+		Find(ctx context.Context, publicID string) (domain.Project, error)
+	}
+	ScopedKeyStore interface {
+		Create(ctx context.Context, in domain.APIKey) (domain.APIKey, error)
 	}
 )
 
 type Usecase struct {
 	cryptoSvc   CryptoSvc
 	idGenerator PublicIDGenerator
-	apiKeyStore store.APIKeyStore
-	projects    store.ProjectStore
+	keyStore    ScopedKeyStore
+	projects    ScopedProjectStore
 	passwordSvc PasswordSvc
 }
 
-func New(cryptoSvc CryptoSvc, idGenerator PublicIDGenerator, apiKeyStore store.APIKeyStore, passwordSvc PasswordSvc, projects store.ProjectStore) *Usecase {
+func New(cryptoSvc CryptoSvc, idGenerator PublicIDGenerator, keyStore ScopedKeyStore, passwordSvc PasswordSvc, projects ScopedProjectStore) *Usecase {
 	return &Usecase{
 		cryptoSvc:   cryptoSvc,
-		apiKeyStore: apiKeyStore,
+		keyStore:    keyStore,
 		idGenerator: idGenerator,
 		passwordSvc: passwordSvc,
 		projects:    projects,
@@ -54,7 +53,7 @@ func (uc *Usecase) Execute(ctx context.Context, in domain.CreateProjectAPIKEYUse
 		return domain.CreateProjectAPIKEYUsecaseOutput{}, fmt.Errorf("project id is required: %w", domain.ErrInvalidInput)
 	}
 
-	project, err := uc.projects.Scope(in.OrgID).Find(ctx, projectPublicID)
+	project, err := uc.projects.Find(ctx, projectPublicID)
 	if err != nil {
 		return domain.CreateProjectAPIKEYUsecaseOutput{}, err
 	}
@@ -76,7 +75,7 @@ func (uc *Usecase) Execute(ctx context.Context, in domain.CreateProjectAPIKEYUse
 		return domain.CreateProjectAPIKEYUsecaseOutput{}, fmt.Errorf("failed to hash api key secret: %v", err)
 	}
 
-	out, err := uc.apiKeyStore.Scope(in.OrgID).Create(ctx, domain.APIKey{
+	out, err := uc.keyStore.Create(ctx, domain.APIKey{
 		Name:      in.Name,
 		PublicID:  apikeyPublicID,
 		ProjectID: project.ID,

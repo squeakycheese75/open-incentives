@@ -61,9 +61,13 @@ type (
 )
 
 type AdminUsecaseFactory struct {
-	createCampaignUsecase      CreateCampaignUsecase
-	getCampaignUsecase         GetCampaignUsecase
-	createProjectAPIKeyUsecase CreateProjectAPIKeyUsecase
+	projectStore  store.ProjectStore
+	campaignStore store.CampaignStore
+	apiKeyStore   store.APIKeyStore
+	idGenerator   PublicIDGenerator
+	ruleValidator RuleValidator
+	cryptoSvc     CryptoSvc
+	passwordSvc   PasswordSvc
 }
 
 func NewAdminUsecaseFactory(
@@ -76,20 +80,24 @@ func NewAdminUsecaseFactory(
 	passwordSvc PasswordSvc,
 ) *AdminUsecaseFactory {
 	return &AdminUsecaseFactory{
-		createCampaignUsecase:      campaign_create.New(projectStore, campaignStore, idGenerator, ruleValidator),
-		getCampaignUsecase:         campaign_get.New(campaignStore, projectStore),
-		createProjectAPIKeyUsecase: project_create_apikey.New(cryptoSvc, idGenerator, apiKeyStore, passwordSvc, projectStore),
+		projectStore:  projectStore,
+		campaignStore: campaignStore,
+		apiKeyStore:   apiKeyStore,
+		idGenerator:   idGenerator,
+		ruleValidator: ruleValidator,
+		cryptoSvc:     cryptoSvc,
+		passwordSvc:   passwordSvc,
 	}
 }
 
-func (f *AdminUsecaseFactory) CreateCampaignUsecase() CreateCampaignUsecase {
-	return f.createCampaignUsecase
+func (f *AdminUsecaseFactory) CreateCampaignUsecase(orgID int64) CreateCampaignUsecase {
+	return campaign_create.New(f.projectStore.Scope(orgID), f.campaignStore.Scope(orgID), f.idGenerator, f.ruleValidator)
 }
 
-func (f *AdminUsecaseFactory) GetCampaignUsecase() GetCampaignUsecase {
-	return f.getCampaignUsecase
+func (f *AdminUsecaseFactory) GetCampaignUsecase(orgID int64) GetCampaignUsecase {
+	return campaign_get.New(f.campaignStore.Scope(orgID), f.projectStore.Scope(orgID))
 }
 
-func (f *AdminUsecaseFactory) CreateProjectAPIKeyUsecase() CreateProjectAPIKeyUsecase {
-	return f.createProjectAPIKeyUsecase
+func (f *AdminUsecaseFactory) CreateProjectAPIKeyUsecase(orgID int64) CreateProjectAPIKeyUsecase {
+	return project_create_apikey.New(f.cryptoSvc, f.idGenerator, f.apiKeyStore.Scope(orgID), f.passwordSvc, f.projectStore.Scope(orgID))
 }

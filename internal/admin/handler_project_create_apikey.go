@@ -43,7 +43,7 @@ func (s *Handler) CreateProjectAPIKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out, err := s.adminContainer.CreateProjectAPIKeyUsecase().Execute(r.Context(), domain.CreateProjectAPIKEYUsecaseInput{
+	out, err := s.adminContainer.CreateProjectAPIKeyUsecase(authCtx.OrgID).Execute(r.Context(), domain.CreateProjectAPIKEYUsecaseInput{
 		OrgID:           authCtx.OrgID,
 		ProjectPublicID: projectSlug,
 		Name:            req.Name,

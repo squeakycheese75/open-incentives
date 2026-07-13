@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/squeakycheese75/open-incentives/internal/domain"
-	"github.com/squeakycheese75/open-incentives/internal/store"
 )
 
 type (
@@ -23,16 +22,23 @@ type (
 	RuleValidator interface {
 		ValidateRules(raw json.RawMessage) error
 	}
+	ScopedProjectStore interface {
+		Find(ctx context.Context, publicID string) (domain.Project, error)
+	}
+	ScopedCampaignStore interface {
+		Create(ctx context.Context, campaign domain.Campaign) (domain.Campaign, error)
+		Find(ctx context.Context, campaignPublicID string, projectID int64) (domain.Campaign, error)
+	}
 )
 
 type Usecase struct {
-	projects      store.ProjectStore
-	campaigns     store.CampaignStore
+	projects      ScopedProjectStore
+	campaigns     ScopedCampaignStore
 	idGenerator   PublicIDGenerator
 	ruleValidator RuleValidator
 }
 
-func New(projects store.ProjectStore, campaigns store.CampaignStore, idGenerator PublicIDGenerator, ruleValidator RuleValidator) *Usecase {
+func New(projects ScopedProjectStore, campaigns ScopedCampaignStore, idGenerator PublicIDGenerator, ruleValidator RuleValidator) *Usecase {
 	return &Usecase{
 		projects:      projects,
 		campaigns:     campaigns,
@@ -56,7 +62,7 @@ func (uc *Usecase) Execute(ctx context.Context, input domain.CreateCampaignUseca
 		return domain.CreateCampaignUsecaseOutput{}, fmt.Errorf("campaign name is required: %w", domain.ErrInvalidInput)
 	}
 
-	project, err := uc.projects.Scope(input.OrgID).Find(ctx, projectPublicID)
+	project, err := uc.projects.Find(ctx, projectPublicID)
 	if err != nil {
 		return domain.CreateCampaignUsecaseOutput{}, err
 	}
@@ -71,8 +77,7 @@ func (uc *Usecase) Execute(ctx context.Context, input domain.CreateCampaignUseca
 			fmt.Errorf("invalid campaign rules: %w: %v", domain.ErrInvalidInput, err)
 	}
 
-	scopedCampaigns := uc.campaigns.Scope(input.OrgID)
-	campaign, err := scopedCampaigns.Create(ctx, domain.Campaign{
+	campaign, err := uc.campaigns.Create(ctx, domain.Campaign{
 		ProjectID: project.ID,
 		OrgId:     input.OrgID,
 		Name:      name,
