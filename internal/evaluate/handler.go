@@ -1,7 +1,7 @@
-package eval
+package evaluate
 
 import (
-	usecase_eval "github.com/squeakycheese75/open-incentives/internal/eval/usecase"
+	usecase_eval "github.com/squeakycheese75/open-incentives/internal/evaluate/usecase"
 )
 
 type Handler struct {

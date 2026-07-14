@@ -24,10 +24,10 @@ func (s *TokenService) Create(userID, orgID string) (string, time.Time, error) {
 	expiresAt := time.Now().Add(24 * time.Hour)
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_public_id": userID,
-		"org_public_id":  orgID,
-		"role":           "admin",
-		"exp":            expiresAt.Unix(),
+		"userPublicId": userID,
+		"orgPublicId":  orgID,
+		"role":         "admin",
+		"exp":          expiresAt.Unix(),
 	})
 
 	signedToken, err := token.SignedString(s.secret)

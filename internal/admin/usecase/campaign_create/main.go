@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/squeakycheese75/open-incentives/internal/domain"
@@ -68,15 +69,33 @@ func (uc *Usecase) Execute(ctx context.Context, input domain.CreateCampaignUseca
 		return domain.CreateCampaignUsecaseOutput{}, err
 	}
 
+	slog.Debug(
+		"validation rules",
+	)
+
 	if err := uc.ruleValidator.ValidateRules(input.Rules); err != nil {
+		slog.Debug(
+			"validation failed",
+			"rules", input.Rules,
+		)
+
 		return domain.CreateCampaignUsecaseOutput{},
 			fmt.Errorf("invalid campaign rules: %w: %v", domain.ErrInvalidInput, err)
 	}
 
+	slog.Debug(
+		"calling Create",
+		"PublicID", campaignPublicID,
+		"ProjectID", project.ID,
+		"Name", name,
+		"Status", domain.CampaignStatusActive,
+		"Rules", input.Rules,
+	)
+
 	campaign, err := uc.campaigns.Create(ctx, domain.Campaign{
+		PublicID:  campaignPublicID,
 		ProjectID: project.ID,
 		Name:      name,
-		PublicID:  campaignPublicID,
 		Status:    domain.CampaignStatusActive,
 		Rules:     input.Rules,
 	})

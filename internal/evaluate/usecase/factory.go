@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/squeakycheese75/open-incentives/internal/domain"
-	"github.com/squeakycheese75/open-incentives/internal/eval/usecase/evaluate"
+	"github.com/squeakycheese75/open-incentives/internal/evaluate/usecase/evaluate"
 	"github.com/squeakycheese75/open-incentives/internal/store"
 )
 

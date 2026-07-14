@@ -18,7 +18,7 @@ type AuthLoginRequest struct {
 
 type AuthLoginResponse struct {
 	Token     string    `json:"token"`
-	ExpiresAt time.Time `json:"expires_at"`
+	ExpiresAt time.Time `json:"expiresAt"`
 }
 
 func (r *AuthLoginRequest) Validate() error {

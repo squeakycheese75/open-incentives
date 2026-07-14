@@ -8,13 +8,13 @@ import (
 	auth "github.com/squeakycheese75/open-incentives/internal/admin/auth"
 	middleware "github.com/squeakycheese75/open-incentives/internal/auth"
 
-	"github.com/squeakycheese75/open-incentives/internal/eval"
+	"github.com/squeakycheese75/open-incentives/internal/evaluate"
 )
 
 func New(
 	adminHandler *admin.Handler,
 	authHandler *auth.Handler,
-	evalHandler *eval.Handler,
+	evalHandler *evaluate.Handler,
 	tokenVerifier middleware.TokenVerifier,
 	adminContextStore middleware.OrgContextStore,
 	apiKeyStore middleware.ApiKeyContextStore,
@@ -44,7 +44,7 @@ func New(
 	root.Handle("/admin/", adminChain)
 
 	evalMux := http.NewServeMux()
-	eval.Register(evalMux, evalHandler)
+	evaluate.Register(evalMux, evalHandler)
 
 	root.Handle("/v1/",
 		middleware.EvalAuthMiddleware(apiKeyStore, apiKeyVerifier)(

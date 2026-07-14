@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/squeakycheese75/open-incentives/internal/admin/usecase/campaign_create"
+	"github.com/squeakycheese75/open-incentives/internal/admin/usecase/campaign_delete"
 	"github.com/squeakycheese75/open-incentives/internal/admin/usecase/campaign_get"
 	"github.com/squeakycheese75/open-incentives/internal/admin/usecase/campaign_list"
 	project_create_apikey "github.com/squeakycheese75/open-incentives/internal/admin/usecase/project_apikey_create"
@@ -25,6 +26,9 @@ type (
 	ListCampaignsUsecase interface {
 		Execute(ctx context.Context, input domain.ListCampaignsUsecaseInput) (domain.ListCampaignsUsecaseOutput, error)
 	}
+	DeleteCampaignUsecase interface {
+		Execute(ctx context.Context, input domain.DeleteCampaignUsecaseInput) error
+	}
 )
 
 type (
@@ -37,6 +41,7 @@ type (
 	ScopedCampaignStore interface {
 		Create(ctx context.Context, campaign domain.Campaign) (domain.Campaign, error)
 		Find(ctx context.Context, publicID string) (domain.Campaign, error)
+		Delete(ctx context.Context, campaignPublicID string, projectID int64) error
 	}
 	APIKeyStore interface {
 		Scope(orgID int64) ScopedAPIKeyStore
@@ -108,4 +113,8 @@ func (f *AdminUsecaseFactory) ListCampaignUsecase(orgID int64) ListCampaignsUsec
 
 func (f *AdminUsecaseFactory) CreateProjectAPIKeyUsecase(orgID int64) CreateProjectAPIKeyUsecase {
 	return project_create_apikey.New(f.cryptoSvc, f.idGenerator, f.apiKeyStore.Scope(orgID), f.passwordSvc, f.projectStore.Scope(orgID))
+}
+
+func (f *AdminUsecaseFactory) DeleteCampaignUsecase(orgID int64) DeleteCampaignUsecase {
+	return campaign_delete.New(f.campaignStore.Scope(orgID), f.projectStore.Scope(orgID))
 }

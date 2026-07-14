@@ -10,7 +10,7 @@ import (
 	"github.com/squeakycheese75/open-incentives/internal/httputil"
 )
 
-func (s *Handler) LisCampaigns(w http.ResponseWriter, r *http.Request) {
+func (s *Handler) ListCampaigns(w http.ResponseWriter, r *http.Request) {
 	projectSlug := r.PathValue("project_public_id")
 	if projectSlug == "" {
 		http.Error(w, "invalid_request", http.StatusBadRequest)
@@ -59,7 +59,7 @@ type ListCampaignResponse struct {
 }
 
 type CampaignResponse struct {
-	PublicID string          `json:"public_id"`
+	PublicID string          `json:"publicId"`
 	Name     string          `json:"name"`
 	Status   string          `json:"status"`
 	Rules    json.RawMessage `json:"rules"`

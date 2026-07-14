@@ -1,8 +1,9 @@
-package eval
+package evaluate
 
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -23,8 +24,15 @@ type CustomerRequest struct {
 }
 
 type CartRequest struct {
-	Subtotal float64 `json:"subtotal"`
-	Currency string  `json:"currency"`
+	Subtotal float64           `json:"subtotal"`
+	Currency string            `json:"currency"`
+	Items    []CartItemRequest `json:"items,omitempty"`
+}
+
+type CartItemRequest struct {
+	ProductID string  `json:"productId"`
+	Quantity  int     `json:"quantity"`
+	UnitPrice float64 `json:"unitPrice"`
 }
 
 type EvaluateResponse struct {
@@ -89,10 +97,7 @@ func (h *Handler) Evaluate(w http.ResponseWriter, r *http.Request) {
 			Country: req.Customer.Country,
 			Tier:    req.Customer.Tier,
 		},
-		Cart: domain.Cart{
-			Subtotal: req.Cart.Subtotal,
-			Currency: req.Cart.Currency,
-		},
+		Cart: resolveCart(req.Cart),
 	})
 	if err != nil {
 		slog.ErrorContext(
@@ -119,15 +124,61 @@ func validateRequest(req EvaluateRequest) error {
 		return errors.New("customer.id is required")
 	}
 
-	if req.Cart.Subtotal < 0 {
-		return errors.New("cart.subtotal must not be negative")
-	}
-
 	if req.Cart.Currency == "" {
 		return errors.New("cart.currency is required")
 	}
 
+	if len(req.Cart.Items) > 0 {
+		for i, item := range req.Cart.Items {
+			if item.ProductID == "" {
+				return fmt.Errorf("cart.items[%d].productId is required", i)
+			}
+
+			if item.Quantity <= 0 {
+				return fmt.Errorf("cart.items[%d].quantity must be greater than zero", i)
+			}
+
+			if item.UnitPrice < 0 {
+				return fmt.Errorf("cart.items[%d].unitPrice must not be negative", i)
+			}
+		}
+
+		return nil
+	}
+
+	if req.Cart.Subtotal < 0 {
+		return errors.New("cart.subtotal must not be negative")
+	}
+
 	return nil
+}
+
+func resolveCart(req CartRequest) domain.Cart {
+	if len(req.Items) == 0 {
+		return domain.Cart{
+			Subtotal: req.Subtotal,
+			Currency: req.Currency,
+		}
+	}
+
+	items := make([]domain.CartItem, 0, len(req.Items))
+	subtotal := 0.0
+
+	for _, item := range req.Items {
+		items = append(items, domain.CartItem{
+			ProductID: item.ProductID,
+			Quantity:  item.Quantity,
+			UnitPrice: item.UnitPrice,
+		})
+
+		subtotal += float64(item.Quantity) * item.UnitPrice
+	}
+
+	return domain.Cart{
+		Subtotal: subtotal,
+		Currency: req.Currency,
+		Items:    items,
+	}
 }
 
 func toEvaluateResponse(

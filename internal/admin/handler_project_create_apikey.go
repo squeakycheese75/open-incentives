@@ -17,9 +17,9 @@ type CreateProjectAPIKeyRequest struct {
 }
 
 type CreateProjectAPIKeyResponse struct {
-	APIKey         string `json:"apikey"`
-	APIKeyPublicID string `json:"apikey_public_id"`
-	CreatedAt      string `json:"created_at"`
+	APIKey         string `json:"apiKey"`
+	APIKeyPublicID string `json:"apiKeyPublicId"`
+	CreatedAt      string `json:"createdAt"`
 }
 
 func (s *Handler) CreateProjectAPIKey(w http.ResponseWriter, r *http.Request) {

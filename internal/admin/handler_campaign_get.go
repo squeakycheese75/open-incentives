@@ -56,7 +56,7 @@ func (s *Handler) GetCampaign(w http.ResponseWriter, r *http.Request) {
 }
 
 type GetCampaignResponse struct {
-	PublicID string          `json:"public_id"`
+	PublicID string          `json:"publicId"`
 	Name     string          `json:"name"`
 	Status   string          `json:"status"`
 	Rules    json.RawMessage `json:"rules"`

@@ -119,11 +119,19 @@ func (q *Queries) CreateProjectAPIKey(ctx context.Context, arg CreateProjectAPIK
 const deleteCampaign = `-- name: DeleteCampaign :exec
 UPDATE campaigns
 SET deleted_at = CURRENT_TIMESTAMP
-WHERE id = ?
+WHERE public_id = ?
+AND project_id = ?
+AND org_id = ?
 `
 
-func (q *Queries) DeleteCampaign(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, deleteCampaign, id)
+type DeleteCampaignParams struct {
+	PublicID  string
+	ProjectID int64
+	OrgID     int64
+}
+
+func (q *Queries) DeleteCampaign(ctx context.Context, arg DeleteCampaignParams) error {
+	_, err := q.db.ExecContext(ctx, deleteCampaign, arg.PublicID, arg.ProjectID, arg.OrgID)
 	return err
 }
 

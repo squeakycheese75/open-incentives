@@ -45,3 +45,8 @@ type ListCampaignsUsecaseInput struct {
 type ListCampaignsUsecaseOutput struct {
 	Campaigns []Campaign
 }
+
+type DeleteCampaignUsecaseInput struct {
+	CampaignPublicID string
+	ProjectPublicID  string
+}

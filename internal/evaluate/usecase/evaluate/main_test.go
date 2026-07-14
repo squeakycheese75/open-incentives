@@ -11,7 +11,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/squeakycheese75/open-incentives/internal/domain"
-	"github.com/squeakycheese75/open-incentives/internal/eval/usecase/evaluate/mocks"
+	"github.com/squeakycheese75/open-incentives/internal/evaluate/usecase/evaluate/mocks"
 )
 
 func TestUsecase_Execute(t *testing.T) {

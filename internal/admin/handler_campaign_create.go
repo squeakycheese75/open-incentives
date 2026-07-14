@@ -41,6 +41,13 @@ func (s *Handler) CreateCampaign(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	slog.DebugContext(
+		r.Context(),
+		"calling usecase",
+		"projectSlug", projectSlug,
+		"name", req.Name,
+	)
+
 	out, err := s.adminContainer.CreateCampaignUsecase(authCtx.OrgID).Execute(r.Context(), domain.CreateCampaignUsecaseInput{
 		ProjectPublicID: projectSlug,
 		Name:            req.Name,
@@ -70,5 +77,5 @@ func (s *Handler) CreateCampaign(w http.ResponseWriter, r *http.Request) {
 }
 
 type CreateCampaignResponse struct {
-	CampaignPublicID string `json:"campaign_public_id"`
+	CampaignPublicID string `json:"campaignPublicId"`
 }

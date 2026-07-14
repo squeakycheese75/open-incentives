@@ -35,7 +35,9 @@ RETURNING id, public_id, name, status, rules, created_at, updated_at;
 -- name: DeleteCampaign :exec
 UPDATE campaigns
 SET deleted_at = CURRENT_TIMESTAMP
-WHERE id = ?;
+WHERE public_id = ?
+AND project_id = ?
+AND org_id = ?;
 
 -- name: GetOrgByPublicID :one
 SELECT id, public_id, name

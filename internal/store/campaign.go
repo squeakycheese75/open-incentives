@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 
 	"github.com/squeakycheese75/open-incentives/internal/db/sqlitedb"
 	"github.com/squeakycheese75/open-incentives/internal/domain"
@@ -17,6 +18,7 @@ type ScopedCampaignStore interface {
 	Create(ctx context.Context, campaign domain.Campaign) (domain.Campaign, error)
 	Find(ctx context.Context, campaignPublicID string, projectID int64) (domain.Campaign, error)
 	List(ctx context.Context, projectID int64) ([]domain.Campaign, error)
+	Delete(ctx context.Context, campaignPublicID string, projectID int64) error
 }
 
 type campaignStore struct {
@@ -95,11 +97,17 @@ func (s *scopedCampaignStore) Create(ctx context.Context, c domain.Campaign) (do
 	result, err := s.queries.CreateCampaign(ctx, sqlitedb.CreateCampaignParams{
 		PublicID:  c.PublicID,
 		ProjectID: c.ProjectID,
+		OrgID:     s.orgID,
 		Name:      c.Name,
 		Rules:     c.Rules,
 		Status:    string(c.Status),
 	})
 	if err != nil {
+		slog.Error(
+			"calling CreateCampaign",
+			"OrgID", s.orgID,
+		)
+
 		return domain.Campaign{}, err
 	}
 
@@ -110,4 +118,17 @@ func (s *scopedCampaignStore) Create(ctx context.Context, c domain.Campaign) (do
 		PublicID:  result.PublicID,
 		Rules:     result.Rules,
 	}, err
+}
+
+func (s *scopedCampaignStore) Delete(ctx context.Context, campaignPublicID string, projectID int64) error {
+	err := s.queries.DeleteCampaign(ctx, sqlitedb.DeleteCampaignParams{
+		PublicID:  campaignPublicID,
+		ProjectID: projectID,
+		OrgID:     s.orgID,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

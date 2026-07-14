@@ -13,37 +13,30 @@ The application will:
 -   Create the SQLite database (if it doesn't exist)
 -   Run database migrations
 -   Bootstrap a default organization and project
--  ~~ Start the API and Admin UI~~
+-   Start the API on `http://localhost:8080`
 
-<!-- ## 2. Open the Admin UI (WIP)
-
-``` text
-http://localhost:8080/admin
-``` -->
 ## 2. Login
 
 ``` bash
 curl -X POST http://localhost:8080/admin/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-
     "organization": "org_default",
     "email": "admin@example.com",
     "password": "change-me"
   }'
 ```
 
-You'll need the returned Token to authenticate the rest of the /admin requests.  
+You'll need the returned `token` to authenticate the rest of the `/admin` requests.
 
 ## 3. Create a campaign
 
-Replace `oi_api_key_xxx` with the Token you generated.
-
-Create your first campaign and mark it as **Active**.  You'll need to lookup the default project public id.
+Replace `proj_xxxxxxxxxxxxx` with your project's public id, and `<TOKEN>` with the
+token from step 2.
 
 ``` bash
-curl -X POST http://localhost:8080//admin/projects/proj_xxxxxxxxxxxxx/campaigns\
-  -H "Authorization: Bearer oi_live_xxx" \
+curl -X POST http://localhost:8080/admin/projects/proj_xxxxxxxxxxxxx/campaigns \
+  -H "Authorization: Bearer <TOKEN>" \
   -H "Content-Type: application/json" \
   -d '{
   "name": "10% off orders over €50",
@@ -76,26 +69,22 @@ curl -X POST http://localhost:8080//admin/projects/proj_xxxxxxxxxxxxx/campaigns\
 
 ## 4. Create an API key
 
-Create your first API key.
-
-Copy the generated key---you'll use it to authenticate requests.
+Copy the generated key — you'll use it to authenticate `/v1/evaluate` requests.
 
 ``` bash
-curl -X POST http://localhost:8080//admin/projects/proj_xxxxxxxxxxxx/api-keys \
-  -H "Authorization: Bearer oi_live_xxx" \
+curl -X POST http://localhost:8080/admin/projects/proj_xxxxxxxxxxxxx/api-keys \
+  -H "Authorization: Bearer <TOKEN>" \
   -H "Content-Type: application/json" \
   -d '{
-    "name":"new-key",
-    "description":"used for me"
+    "name": "new-key"
   }'
 ```
-
 
 ## 5. Evaluate
 
 ``` bash
 curl -X POST http://localhost:8080/v1/evaluate \
-  -H "Authorization: Bearer oi_api_key_xxx" \
+  -H "Authorization: ApiKey api_xxxxx.yyyyy" \
   -H "Content-Type: application/json" \
   -d '{
     "customer": {
@@ -104,13 +93,42 @@ curl -X POST http://localhost:8080/v1/evaluate \
       "tier": "gold"
     },
     "cart": {
-      "total": 120,
-      "currency": "EUR"
+      "currency": "EUR",
+      "items": [
+        { "productId": "prod_coffee", "quantity": 2, "unitPrice": 18 },
+        { "productId": "prod_mug", "quantity": 1, "unitPrice": 14 }
+      ]
     }
   }'
 ```
 
-Replace `oi_api_key_xxx` with the API key you created.
+Replace `api_xxxxx.yyyyy` with the API key you created in step 4.
 
-If an active campaign matches the request, the evaluation response will
-include the matching incentives.
+If an active campaign matches the request, the evaluation response will include the
+matching incentives. `cart.items[]` is optional — you can send `cart.subtotal`
+directly instead if you don't need per-item pricing.
+
+## 6. Try the demo store (optional)
+
+`apps/demo-store` is a small Next.js storefront that shows how a third-party store
+integrates with the `/v1/evaluate` API — see `apps/demo-store/README.md` for details.
+
+It isn't started by `docker compose up` by default (it lives behind the `demo-store`
+Compose profile). To run it:
+
+``` bash
+DEMO_STORE_API_KEY=api_xxxxx.yyyyy docker compose --profile demo-store up --build
+```
+
+Then open `http://localhost:3000`. Use the API key you created in step 4 — the
+demo store's server-side code is the only place it's read; it's never sent to the
+browser.
+
+To run the demo store without Docker instead:
+
+``` bash
+cd apps/demo-store
+cp .env.example .env.local
+npm install
+npm run dev
+```

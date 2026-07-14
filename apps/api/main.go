@@ -14,6 +14,7 @@ import (
 	engine "github.com/squeakycheese75/open-incentives-engine"
 	"github.com/squeakycheese75/open-incentives/configs"
 	"github.com/squeakycheese75/open-incentives/internal/adapters"
+	"github.com/squeakycheese75/open-incentives/internal/evaluate"
 
 	"github.com/squeakycheese75/open-incentives/internal/services"
 
@@ -22,8 +23,7 @@ import (
 	usecase_auth "github.com/squeakycheese75/open-incentives/internal/admin/auth/usecase"
 	usecase_admin "github.com/squeakycheese75/open-incentives/internal/admin/usecase"
 	"github.com/squeakycheese75/open-incentives/internal/db/sqlitedb"
-	"github.com/squeakycheese75/open-incentives/internal/eval"
-	usecase_eval "github.com/squeakycheese75/open-incentives/internal/eval/usecase"
+	usecase_eval "github.com/squeakycheese75/open-incentives/internal/evaluate/usecase"
 
 	"github.com/squeakycheese75/open-incentives/internal/httpserver"
 	"github.com/squeakycheese75/open-incentives/internal/store"
@@ -59,7 +59,8 @@ func run(cfg *configs.APIConfig) error {
 
 	adminHandler := admin.NewHandler(adminUsecaseFactory)
 	authHandler := auth.NewHandler(authUsecaseFactory)
-	evalHandler := eval.NewHandler(evalUsecaseFactory)
+
+	evalHandler := evaluate.NewHandler(evalUsecaseFactory)
 
 	// authCache := cache.NewAuthContextCache(5 * time.Minute)
 
