@@ -7,6 +7,10 @@ incentives through a lightweight, API-first platform. If you're
 evaluating platforms like Talon.One or Voucherify, Open Incentives
 offers a self-hosted, open-source alternative.
 
+![Open Incentives quickstart](demo/quickstart.gif)
+
+Read the [announcement](docs/PRESS_RELEASE.md) →
+
 ## Features
 
 -   API-first promotion engine
@@ -17,19 +21,12 @@ offers a self-hosted, open-source alternative.
 -   Discounts, coupons, and incentives
 -   Built for modern commerce
 
-## Quick Start
+## Quick Start (inc, demo store)
 
 ``` bash
 git clone https://github.com/squeakycheese75/open-incentives.git
 cd open-incentives
-docker compose up 
-```
-
-or with demo store 
-``` bash
-git clone https://github.com/squeakycheese75/open-incentives.git
-cd open-incentives
-docker compose up --profile demo-store
+docker compose --profile demo-store up -d  
 ```
 
 
