@@ -50,3 +50,57 @@ type DeleteCampaignUsecaseInput struct {
 	CampaignPublicID string
 	ProjectPublicID  string
 }
+
+type UpdateCampaignUsecaseInput struct {
+	CampaignPublicID string
+	ProjectPublicID  string
+	Name             string
+	Status           string
+	Rules            json.RawMessage
+}
+
+type UpdateCampaignUsecaseOutput struct {
+	Campaign
+}
+
+type ListAPIKeysUsecaseInput struct {
+	ProjectPublicID string
+}
+
+type ListAPIKeysUsecaseOutput struct {
+	APIKeys []APIKey
+}
+
+type RevokeAPIKeyUsecaseInput struct {
+	APIKeyPublicID  string
+	ProjectPublicID string
+}
+
+type RevokeAPIKeyUsecaseOutput struct {
+	APIKey
+}
+
+type CreateProjectUsecaseInput struct {
+	Name string
+}
+
+type CreateProjectUsecaseOutput struct {
+	Project
+}
+
+type ListProjectsUsecaseOutput struct {
+	Projects []Project
+}
+
+type UpdateProjectUsecaseInput struct {
+	ProjectPublicID string
+	Name            string
+}
+
+type UpdateProjectUsecaseOutput struct {
+	Project
+}
+
+type DeleteProjectUsecaseInput struct {
+	ProjectPublicID string
+}

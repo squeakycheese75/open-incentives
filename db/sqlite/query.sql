@@ -23,12 +23,13 @@ ORDER BY created_at DESC;
 -- name: UpdateCampaign :one
 UPDATE campaigns
 SET
-    public_id = ?,
     name = ?,
     status = ?,
     rules = ?,
     updated_at = CURRENT_TIMESTAMP
-WHERE id = ?
+WHERE public_id = ?
+AND project_id = ?
+AND org_id = ?
 AND deleted_at IS NULL
 RETURNING id, public_id, name, status, rules, created_at, updated_at;
 
@@ -53,7 +54,7 @@ AND org_id = ?
 AND deleted_at IS NULL;
 
 -- name: GetProjectByPublicID :one
-SELECT id, public_id, name
+SELECT id, public_id, org_id, name, created_at, updated_at
 FROM projects
 WHERE public_id = ?
 AND org_id = ?
@@ -77,4 +78,49 @@ WHERE ak.public_id = ?
   AND ak.revoked_at IS NULL
   AND ak.deleted_at IS NULL
   AND p.deleted_at IS NULL;
-  
+
+-- name: ListAPIKeysByProject :many
+SELECT id, public_id, org_id, project_id, name, prefix, status, created_at, updated_at, last_used_at, revoked_at
+FROM api_keys
+WHERE org_id = ?
+AND project_id = ?
+AND deleted_at IS NULL
+ORDER BY created_at DESC;
+
+-- name: RevokeAPIKey :one
+UPDATE api_keys
+SET status = 'revoked', revoked_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+WHERE public_id = ?
+AND project_id = ?
+AND org_id = ?
+AND deleted_at IS NULL
+AND status = 'active'
+RETURNING id, public_id, org_id, project_id, name, prefix, status, created_at, updated_at, last_used_at, revoked_at;
+
+-- name: CreateProject :one
+INSERT INTO projects (public_id, org_id, name)
+VALUES (?, ?, ?)
+RETURNING id, public_id, org_id, name, created_at, updated_at;
+
+-- name: ListProjectsByOrg :many
+SELECT id, public_id, org_id, name, created_at, updated_at
+FROM projects
+WHERE org_id = ?
+AND deleted_at IS NULL
+ORDER BY created_at DESC;
+
+-- name: UpdateProject :one
+UPDATE projects
+SET name = ?, updated_at = CURRENT_TIMESTAMP
+WHERE public_id = ?
+AND org_id = ?
+AND deleted_at IS NULL
+RETURNING id, public_id, org_id, name, created_at, updated_at;
+
+-- name: DeleteProject :exec
+UPDATE projects
+SET deleted_at = CURRENT_TIMESTAMP
+WHERE public_id = ?
+AND org_id = ?
+AND deleted_at IS NULL;
+ 

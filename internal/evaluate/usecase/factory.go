@@ -30,7 +30,6 @@ type (
 type EvalUsecaseFactory struct {
 	runtimeAdapter RuntimeAdapter
 	actionApplier  ActionApplier
-	evalUsecase    EvaluateUsecase
 	campaignStore  store.CampaignStore
 }
 
