@@ -1,169 +1,85 @@
 # Open Incentives
 
-> Open-source promotions infrastructure for teams that want to experiment with incentives without making a long-term ecosystem commitment.
+Open Incentives is an open-source promotion engine for modern commerce.
+
+Build discounts, coupons, loyalty rewards, referral campaigns, and other
+incentives through a lightweight, API-first platform. If you're
+evaluating platforms like Talon.One or Voucherify, Open Incentives
+offers a self-hosted, open-source alternative.
+
+## Features
+
+-   API-first promotion engine
+-   Self-hosted with Docker
+-   Open source
+-   Lightweight and developer-friendly
+-   Rule-based campaigns
+-   Discounts, coupons, and incentives
+-   Built for modern commerce
+
+## Quick Start
+
+``` bash
+git clone https://github.com/squeakycheese75/open-incentives.git
+cd open-incentives
+docker compose up 
+```
+
+or with demo store 
+``` bash
+git clone https://github.com/squeakycheese75/open-incentives.git
+cd open-incentives
+docker compose up --profile demo-store
+```
+
+
+Once running:
+
+-   API: http://localhost:8080
+-   Admin Portal: http://localhost:3001 *(coming soon)*
+-   Demo Store: http://localhost:3000 
+
+See the `docs/quickstart.md` guide for a complete walkthrough.
 
 ## Why?
 
-Many companies eventually need promotions:
+Almost every commerce business eventually needs promotions:
 
-- Coupon codes
-- Discounts
-- Credits
-- Basic loyalty
-- Referral rewards
-- Win-back campaigns
+-   Coupon codes
+-   Discounts
+-   Store credit
+-   Loyalty rewards
+-   Referral campaigns
+-   Win-back offers
 
-Today the choices are often:
+Today, the options are often:
 
-1. Build it yourself.
-2. Buy an enterprise incentives platform.
-3. Delay experimentation.
+1.  Build and maintain a custom promotion engine.
+2.  Buy an enterprise incentives platform like Talon.One or Voucherify.
+3.  Delay experimentation because the investment is too high.
 
-Open Incentives aims to fill the gap between simple discount functionality and full enterprise incentives suites.
+Open Incentives fills the gap between basic discount functionality and
+enterprise promotion platforms.
 
-The goal is to make promotions:
+Our goal is to make promotions:
 
-- Easy to add
-- Easy to integrate
-- Easy to remove
+-   Easy to build
+-   Easy to integrate
+-   Easy to operate
+-   Easy to remove
 
----
+Open Incentives is API-first, self-hosted, and open source---giving
+teams full control over their promotion infrastructure without the
+complexity or cost of enterprise platforms.
 
-# Vision
+## Roadmap
 
-Become the default open-source promotions engine that teams reach for when they need incentives quickly and don't want to commit to an entire ecosystem.
-
-The project is designed for:
-
-- Custom ecommerce applications
-- SaaS products
-- Marketplaces
-- Platforms embedding promotions into their products
-
----
-
-# Philosophy
-
-## Start simple
-
-A team should be able to:
-
-1. Start the service
-2. Create a campaign
-3. Integrate with their application
-4. See a promotion working
-
-...in less than an afternoon.
-
-## Avoid lock-in
-
-Promotions should not require a strategic vendor decision.
-
-The system should be:
-
-- Self-hostable
-- Portable
-- Easy to uninstall
-- Easy to migrate away from
-
-## Build from the core
-
-The heart of the project is a standalone rules engine.
-
-Facts + Rules → Promotion Engine → Actions + Decisions
-
-Everything else is built around this core.
-
----
-
-# Initial Use Case
-
-A company running on:
-
-Frontend → Backend → Stripe → No promotions infrastructure
-
-wants to launch:
-
-> 10% off orders over €50
-
-without building a promotions system from scratch or adopting an enterprise platform.
-
----
-
-# Project Goals
-
-## V1
-
-- Rules engine
-- Promotion evaluation API
-- Campaign management
-- Coupons
-- Event tracking
-- Basic admin UI
-- Demo application
-
-## Future
-
-- Loyalty
-- Referrals
-- Segmentation
-- Experimentation
-- Analytics
-- Multi-tenancy
-
----
-
-# Non-Goals
-
-Open Incentives is not trying to be:
-
-- A CRM
-- A CDP
-- Marketing automation software
-- An email platform
-- A customer journey tool
-- An enterprise incentives suite (yet)
-
----
-
-# Architecture
-
-Admin UI
-↑
-API + Persistence
-↑
-Promotion Engine
-
-The engine is intentionally designed to be:
-
-- Deterministic
-- Importable
-- Portable
-- Versioned
-- Usable as a standalone dependency
-
----
-
-# Guiding Principles
-
-## Easy to Add
-
-docker compose up
-
-## Easy to Integrate
-
-result, err := client.Evaluate(...)
-
-## Easy to Remove
-
-Delete a few API calls and shut down the service.
-
-No lock-in.
-
----
-
-# Status
-
-🚧 Early development.
-
-The project is currently focused on validating the core promotion engine and the first end-to-end use cases.
+-   [x] Rule evaluation engine
+-   [x] Campaign management API
+-   [x] API key authentication
+-   [x] Demo store UI
+-   [ ] PostgreSQL storage
+-   [ ] Admin UI
+-   [ ] Webhooks
+-   [ ] Loyalty points
+-   [ ] A/B testing
