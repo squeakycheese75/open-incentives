@@ -18,6 +18,8 @@ type APIConfig struct {
 
 	ServerJWTSecret string `envconfig:"SERVER_JWT_SECRET" required:"true"`
 
+	CORSAllowedOrigins string `envconfig:"CORS_ALLOWED_ORIGINS" default:"http://localhost:3001"`
+
 	Bootstrap BootstrapConfig
 }
 

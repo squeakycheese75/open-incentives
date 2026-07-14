@@ -10,6 +10,16 @@ services:
     volumes:
       - ./data:/data
 
+  admin:
+    build:
+      context: ./apps/admin
+    environment:
+      API_BASE_URL: http://localhost:8080
+    ports:
+      - "3001:80"
+    depends_on:
+      - api
+
   demo-store:
     profiles:
       - demo-store

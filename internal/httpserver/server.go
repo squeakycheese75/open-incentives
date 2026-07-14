@@ -7,6 +7,7 @@ import (
 	"github.com/squeakycheese75/open-incentives/internal/admin"
 	auth "github.com/squeakycheese75/open-incentives/internal/admin/auth"
 	middleware "github.com/squeakycheese75/open-incentives/internal/auth"
+	"github.com/squeakycheese75/open-incentives/internal/httputil"
 
 	"github.com/squeakycheese75/open-incentives/internal/evaluate"
 )
@@ -19,8 +20,11 @@ func New(
 	adminContextStore middleware.OrgContextStore,
 	apiKeyStore middleware.ApiKeyContextStore,
 	apiKeyVerifier middleware.APIKeyVerifier,
+	corsCfg httputil.CORSConfig,
 ) http.Handler {
 	root := http.NewServeMux()
+
+	cors := httputil.CORSMiddleware(corsCfg)
 
 	adminMux := http.NewServeMux()
 	admin.RegisterProtected(adminMux, adminHandler)
@@ -29,15 +33,17 @@ func New(
 	auth.RegisterPublic(authMux, authHandler)
 
 	root.Handle("/admin/auth/",
-		http.StripPrefix("/admin/auth", authMux),
+		cors(http.StripPrefix("/admin/auth", authMux)),
 	)
 
-	adminChain := middleware.AdminAuthMiddleware(tokenVerifier)(
-		middleware.AdminContextMiddleware(
-			adminContextStore,
-			middleware.NewAuthContextCache(5*time.Minute),
-		)(
-			http.StripPrefix("/admin", adminMux),
+	adminChain := cors(
+		middleware.AdminAuthMiddleware(tokenVerifier)(
+			middleware.AdminContextMiddleware(
+				adminContextStore,
+				middleware.NewAuthContextCache(5*time.Minute),
+			)(
+				http.StripPrefix("/admin", adminMux),
+			),
 		),
 	)
 

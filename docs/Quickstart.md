@@ -15,7 +15,24 @@ The application will:
 -   Bootstrap a default organization and project
 -   Start the API on `http://localhost:8080`
 
-## 2. Login
+## 2. Log in
+
+The default bootstrapped login credentials are:
+
+-   **Email:** `admin@example.com`
+-   **Password:** `change-me`
+
+(Change these before running in production by setting `BOOTSTRAP_ADMIN_EMAIL` /
+`BOOTSTRAP_ADMIN_PASSWORD`.)
+
+### Option A: Admin Portal (recommended)
+
+Open `http://localhost:3001` and sign in with the credentials above. From there
+you can create projects, campaigns, and API keys without touching curl — skip
+straight to [step 6](#6-try-the-demo-store-optional) once you've created a
+campaign and API key through the UI.
+
+### Option B: curl
 
 ``` bash
 curl -X POST http://localhost:8080/admin/auth/login \
@@ -27,9 +44,14 @@ curl -X POST http://localhost:8080/admin/auth/login \
   }'
 ```
 
-You'll need the returned `token` to authenticate the rest of the `/admin` requests.
+You'll need the returned `token` to authenticate the rest of the `/admin` requests
+in the steps below.
 
 ## 3. Create a campaign
+
+If you logged in via the Admin Portal (Option A above), you can create a campaign
+there directly and skip to [step 5](#5-evaluate). The curl steps below continue
+the API-only path (Option B).
 
 Replace `proj_xxxxxxxxxxxxx` with your project's public id, and `<TOKEN>` with the
 token from step 2.

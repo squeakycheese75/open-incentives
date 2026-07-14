@@ -36,10 +36,17 @@ docker compose up --profile demo-store
 Once running:
 
 -   API: http://localhost:8080
--   Admin Portal: http://localhost:3001 *(coming soon)*
+-   Admin Portal: http://localhost:3001
 -   Demo Store: http://localhost:3000 
 
-See the `docs/quickstart.md` guide for a complete walkthrough.
+Log in to the Admin Portal with the default bootstrapped credentials:
+
+-   Email: `admin@example.com`
+-   Password: `change-me`
+
+(Set `BOOTSTRAP_ADMIN_EMAIL` / `BOOTSTRAP_ADMIN_PASSWORD` before first run to change these.)
+
+See the `docs/Quickstart.md` guide for a complete walkthrough.
 
 ## Why?
 
@@ -78,8 +85,8 @@ complexity or cost of enterprise platforms.
 -   [x] Campaign management API
 -   [x] API key authentication
 -   [x] Demo store UI
+-   [x] Admin UI
 -   [ ] PostgreSQL storage
--   [ ] Admin UI
 -   [ ] Webhooks
 -   [ ] Loyalty points
 -   [ ] A/B testing

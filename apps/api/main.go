@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -26,6 +27,7 @@ import (
 	usecase_eval "github.com/squeakycheese75/open-incentives/internal/evaluate/usecase"
 
 	"github.com/squeakycheese75/open-incentives/internal/httpserver"
+	"github.com/squeakycheese75/open-incentives/internal/httputil"
 	"github.com/squeakycheese75/open-incentives/internal/store"
 )
 
@@ -64,7 +66,9 @@ func run(cfg *configs.APIConfig) error {
 
 	// authCache := cache.NewAuthContextCache(5 * time.Minute)
 
-	mux := httpserver.New(adminHandler, authHandler, evalHandler, tokenSvc, store.Orgs(), store.APIKeys(), passwordSvc)
+	corsCfg := httputil.CORSConfig{AllowedOrigins: parseAllowedOrigins(cfg.CORSAllowedOrigins)}
+
+	mux := httpserver.New(adminHandler, authHandler, evalHandler, tokenSvc, store.Orgs(), store.APIKeys(), passwordSvc, corsCfg)
 
 	srv := &http.Server{
 		Addr:    ":" + fmt.Sprint(cfg.ServerPort),
@@ -97,6 +101,17 @@ func run(cfg *configs.APIConfig) error {
 	slog.Warn("Server exiting ...")
 
 	return nil
+}
+
+func parseAllowedOrigins(raw string) []string {
+	var origins []string
+	for _, origin := range strings.Split(raw, ",") {
+		origin = strings.TrimSpace(origin)
+		if origin != "" {
+			origins = append(origins, origin)
+		}
+	}
+	return origins
 }
 
 func main() {
