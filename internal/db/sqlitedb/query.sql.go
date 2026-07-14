@@ -7,6 +7,7 @@ package sqlitedb
 
 import (
 	"context"
+	"database/sql"
 	"time"
 )
 
@@ -55,6 +56,41 @@ func (q *Queries) CreateCampaign(ctx context.Context, arg CreateCampaignParams) 
 		&i.Rules,
 		&i.ProjectID,
 		&i.OrgID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const createProject = `-- name: CreateProject :one
+INSERT INTO projects (public_id, org_id, name)
+VALUES (?, ?, ?)
+RETURNING id, public_id, org_id, name, created_at, updated_at
+`
+
+type CreateProjectParams struct {
+	PublicID string
+	OrgID    int64
+	Name     string
+}
+
+type CreateProjectRow struct {
+	ID        int64
+	PublicID  string
+	OrgID     int64
+	Name      string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+func (q *Queries) CreateProject(ctx context.Context, arg CreateProjectParams) (CreateProjectRow, error) {
+	row := q.db.QueryRowContext(ctx, createProject, arg.PublicID, arg.OrgID, arg.Name)
+	var i CreateProjectRow
+	err := row.Scan(
+		&i.ID,
+		&i.PublicID,
+		&i.OrgID,
+		&i.Name,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -132,6 +168,24 @@ type DeleteCampaignParams struct {
 
 func (q *Queries) DeleteCampaign(ctx context.Context, arg DeleteCampaignParams) error {
 	_, err := q.db.ExecContext(ctx, deleteCampaign, arg.PublicID, arg.ProjectID, arg.OrgID)
+	return err
+}
+
+const deleteProject = `-- name: DeleteProject :exec
+UPDATE projects
+SET deleted_at = CURRENT_TIMESTAMP
+WHERE public_id = ?
+AND org_id = ?
+AND deleted_at IS NULL
+`
+
+type DeleteProjectParams struct {
+	PublicID string
+	OrgID    int64
+}
+
+func (q *Queries) DeleteProject(ctx context.Context, arg DeleteProjectParams) error {
+	_, err := q.db.ExecContext(ctx, deleteProject, arg.PublicID, arg.OrgID)
 	return err
 }
 
@@ -232,7 +286,7 @@ func (q *Queries) GetOrgByPublicID(ctx context.Context, publicID string) (GetOrg
 }
 
 const getProjectByPublicID = `-- name: GetProjectByPublicID :one
-SELECT id, public_id, name
+SELECT id, public_id, org_id, name, created_at, updated_at
 FROM projects
 WHERE public_id = ?
 AND org_id = ?
@@ -245,15 +299,25 @@ type GetProjectByPublicIDParams struct {
 }
 
 type GetProjectByPublicIDRow struct {
-	ID       int64
-	PublicID string
-	Name     string
+	ID        int64
+	PublicID  string
+	OrgID     int64
+	Name      string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 func (q *Queries) GetProjectByPublicID(ctx context.Context, arg GetProjectByPublicIDParams) (GetProjectByPublicIDRow, error) {
 	row := q.db.QueryRowContext(ctx, getProjectByPublicID, arg.PublicID, arg.OrgID)
 	var i GetProjectByPublicIDRow
-	err := row.Scan(&i.ID, &i.PublicID, &i.Name)
+	err := row.Scan(
+		&i.ID,
+		&i.PublicID,
+		&i.OrgID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
 	return i, err
 }
 
@@ -291,6 +355,69 @@ func (q *Queries) GetUserByEmailAndOrg(ctx context.Context, arg GetUserByEmailAn
 		&i.Role,
 	)
 	return i, err
+}
+
+const listAPIKeysByProject = `-- name: ListAPIKeysByProject :many
+SELECT id, public_id, org_id, project_id, name, prefix, status, created_at, updated_at, last_used_at, revoked_at
+FROM api_keys
+WHERE org_id = ?
+AND project_id = ?
+AND deleted_at IS NULL
+ORDER BY created_at DESC
+`
+
+type ListAPIKeysByProjectParams struct {
+	OrgID     int64
+	ProjectID int64
+}
+
+type ListAPIKeysByProjectRow struct {
+	ID         int64
+	PublicID   string
+	OrgID      int64
+	ProjectID  int64
+	Name       string
+	Prefix     string
+	Status     string
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+	LastUsedAt sql.NullTime
+	RevokedAt  sql.NullTime
+}
+
+func (q *Queries) ListAPIKeysByProject(ctx context.Context, arg ListAPIKeysByProjectParams) ([]ListAPIKeysByProjectRow, error) {
+	rows, err := q.db.QueryContext(ctx, listAPIKeysByProject, arg.OrgID, arg.ProjectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListAPIKeysByProjectRow
+	for rows.Next() {
+		var i ListAPIKeysByProjectRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.PublicID,
+			&i.OrgID,
+			&i.ProjectID,
+			&i.Name,
+			&i.Prefix,
+			&i.Status,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.LastUsedAt,
+			&i.RevokedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listActiveCampaignsByProject = `-- name: ListActiveCampaignsByProject :many
@@ -349,25 +476,124 @@ func (q *Queries) ListActiveCampaignsByProject(ctx context.Context, arg ListActi
 	return items, nil
 }
 
+const listProjectsByOrg = `-- name: ListProjectsByOrg :many
+SELECT id, public_id, org_id, name, created_at, updated_at
+FROM projects
+WHERE org_id = ?
+AND deleted_at IS NULL
+ORDER BY created_at DESC
+`
+
+type ListProjectsByOrgRow struct {
+	ID        int64
+	PublicID  string
+	OrgID     int64
+	Name      string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+func (q *Queries) ListProjectsByOrg(ctx context.Context, orgID int64) ([]ListProjectsByOrgRow, error) {
+	rows, err := q.db.QueryContext(ctx, listProjectsByOrg, orgID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListProjectsByOrgRow
+	for rows.Next() {
+		var i ListProjectsByOrgRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.PublicID,
+			&i.OrgID,
+			&i.Name,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const revokeAPIKey = `-- name: RevokeAPIKey :one
+UPDATE api_keys
+SET status = 'revoked', revoked_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+WHERE public_id = ?
+AND project_id = ?
+AND org_id = ?
+AND deleted_at IS NULL
+AND status = 'active'
+RETURNING id, public_id, org_id, project_id, name, prefix, status, created_at, updated_at, last_used_at, revoked_at
+`
+
+type RevokeAPIKeyParams struct {
+	PublicID  string
+	ProjectID int64
+	OrgID     int64
+}
+
+type RevokeAPIKeyRow struct {
+	ID         int64
+	PublicID   string
+	OrgID      int64
+	ProjectID  int64
+	Name       string
+	Prefix     string
+	Status     string
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+	LastUsedAt sql.NullTime
+	RevokedAt  sql.NullTime
+}
+
+func (q *Queries) RevokeAPIKey(ctx context.Context, arg RevokeAPIKeyParams) (RevokeAPIKeyRow, error) {
+	row := q.db.QueryRowContext(ctx, revokeAPIKey, arg.PublicID, arg.ProjectID, arg.OrgID)
+	var i RevokeAPIKeyRow
+	err := row.Scan(
+		&i.ID,
+		&i.PublicID,
+		&i.OrgID,
+		&i.ProjectID,
+		&i.Name,
+		&i.Prefix,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.LastUsedAt,
+		&i.RevokedAt,
+	)
+	return i, err
+}
+
 const updateCampaign = `-- name: UpdateCampaign :one
 UPDATE campaigns
 SET
-    public_id = ?,
     name = ?,
     status = ?,
     rules = ?,
     updated_at = CURRENT_TIMESTAMP
-WHERE id = ?
+WHERE public_id = ?
+AND project_id = ?
+AND org_id = ?
 AND deleted_at IS NULL
 RETURNING id, public_id, name, status, rules, created_at, updated_at
 `
 
 type UpdateCampaignParams struct {
-	PublicID string
-	Name     string
-	Status   string
-	Rules    []byte
-	ID       int64
+	Name      string
+	Status    string
+	Rules     []byte
+	PublicID  string
+	ProjectID int64
+	OrgID     int64
 }
 
 type UpdateCampaignRow struct {
@@ -382,11 +608,12 @@ type UpdateCampaignRow struct {
 
 func (q *Queries) UpdateCampaign(ctx context.Context, arg UpdateCampaignParams) (UpdateCampaignRow, error) {
 	row := q.db.QueryRowContext(ctx, updateCampaign,
-		arg.PublicID,
 		arg.Name,
 		arg.Status,
 		arg.Rules,
-		arg.ID,
+		arg.PublicID,
+		arg.ProjectID,
+		arg.OrgID,
 	)
 	var i UpdateCampaignRow
 	err := row.Scan(
@@ -395,6 +622,44 @@ func (q *Queries) UpdateCampaign(ctx context.Context, arg UpdateCampaignParams) 
 		&i.Name,
 		&i.Status,
 		&i.Rules,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const updateProject = `-- name: UpdateProject :one
+UPDATE projects
+SET name = ?, updated_at = CURRENT_TIMESTAMP
+WHERE public_id = ?
+AND org_id = ?
+AND deleted_at IS NULL
+RETURNING id, public_id, org_id, name, created_at, updated_at
+`
+
+type UpdateProjectParams struct {
+	Name     string
+	PublicID string
+	OrgID    int64
+}
+
+type UpdateProjectRow struct {
+	ID        int64
+	PublicID  string
+	OrgID     int64
+	Name      string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+func (q *Queries) UpdateProject(ctx context.Context, arg UpdateProjectParams) (UpdateProjectRow, error) {
+	row := q.db.QueryRowContext(ctx, updateProject, arg.Name, arg.PublicID, arg.OrgID)
+	var i UpdateProjectRow
+	err := row.Scan(
+		&i.ID,
+		&i.PublicID,
+		&i.OrgID,
+		&i.Name,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

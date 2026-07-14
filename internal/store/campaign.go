@@ -2,7 +2,9 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -18,6 +20,7 @@ type ScopedCampaignStore interface {
 	Create(ctx context.Context, campaign domain.Campaign) (domain.Campaign, error)
 	Find(ctx context.Context, campaignPublicID string, projectID int64) (domain.Campaign, error)
 	List(ctx context.Context, projectID int64) ([]domain.Campaign, error)
+	Update(ctx context.Context, campaignPublicID string, projectID int64, update domain.Campaign) (domain.Campaign, error)
 	Delete(ctx context.Context, campaignPublicID string, projectID int64) error
 }
 
@@ -118,6 +121,39 @@ func (s *scopedCampaignStore) Create(ctx context.Context, c domain.Campaign) (do
 		PublicID:  result.PublicID,
 		Rules:     result.Rules,
 	}, err
+}
+
+func (s *scopedCampaignStore) Update(ctx context.Context, campaignPublicID string, projectID int64, update domain.Campaign) (domain.Campaign, error) {
+	result, err := s.queries.UpdateCampaign(ctx, sqlitedb.UpdateCampaignParams{
+		Name:      update.Name,
+		Status:    string(update.Status),
+		Rules:     update.Rules,
+		PublicID:  campaignPublicID,
+		ProjectID: projectID,
+		OrgID:     s.orgID,
+	})
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return domain.Campaign{}, domain.ErrNotFound
+		}
+		return domain.Campaign{}, err
+	}
+
+	rules := json.RawMessage(result.Rules)
+	if !json.Valid(rules) {
+		return domain.Campaign{}, fmt.Errorf(
+			"campaign %q contains invalid rules JSON",
+			result.PublicID,
+		)
+	}
+
+	return domain.Campaign{
+		PublicID:  result.PublicID,
+		ProjectID: projectID,
+		Name:      result.Name,
+		Status:    domain.CampaignStatus(result.Status),
+		Rules:     rules,
+	}, nil
 }
 
 func (s *scopedCampaignStore) Delete(ctx context.Context, campaignPublicID string, projectID int64) error {
